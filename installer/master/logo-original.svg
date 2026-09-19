@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+<defs>
+  <radialGradient id="bg" cx="30%" cy="18%" r="104%">
+    <stop offset="0" stop-color="#0c203d"/>
+    <stop offset=".55" stop-color="#07182f"/>
+    <stop offset="1" stop-color="#020b18"/>
+  </radialGradient>
+  <linearGradient id="silver" x1=".08" y1=".05" x2=".92" y2=".92">
+    <stop offset="0" stop-color="#ffffff"/>
+    <stop offset=".35" stop-color="#f8f9fb"/>
+    <stop offset=".62" stop-color="#b9c2ce"/>
+    <stop offset=".82" stop-color="#eef2f7"/>
+    <stop offset="1" stop-color="#ffffff"/>
+  </linearGradient>
+  <linearGradient id="blue" x1=".08" y1=".06" x2=".92" y2=".94">
+    <stop offset="0" stop-color="#1683ff"/>
+    <stop offset=".48" stop-color="#086eff"/>
+    <stop offset="1" stop-color="#0050dd"/>
+  </linearGradient>
+  <filter id="shadow" x="-25%" y="-25%" width="150%" height="150%">
+    <feDropShadow dx="0" dy="7" stdDeviation="7" flood-color="#000" flood-opacity=".42"/>
+  </filter>
+</defs>
+<rect x="18" y="18" width="476" height="476" rx="82" fill="url(#bg)" stroke="#17314f" stroke-width="3"/>
+<g filter="url(#shadow)">
+  <path d="M117 133 L115 335 L165 306 L167 227 L197 244 L199 297 L242 323 L243 212 Z" fill="url(#silver)"/>
+  <path d="M394 118 L259 203 L260 256 L341 210 L341 291 L285 325 L285 381 L395 318 Z" fill="url(#blue)"/>
+</g>
+</svg>
