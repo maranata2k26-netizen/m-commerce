@@ -1,1 +1,14 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><defs><linearGradient id="s" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff"/><stop offset=".58" stop-color="#d8dee9"/><stop offset="1" stop-color="#8894a8"/></linearGradient><linearGradient id="c" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2f6bff"/><stop offset=".55" stop-color="#0964ff"/><stop offset="1" stop-color="#0046c7"/></linearGradient><radialGradient id="b" cx="50%" cy="36%" r="78%"><stop offset="0" stop-color="#102d59"/><stop offset=".52" stop-color="#0a1f44"/><stop offset="1" stop-color="#061327"/></radialGradient></defs><rect x="18" y="18" width="476" height="476" rx="104" fill="url(#b)"/><path d="M110 164 236 230v168l-55-30V271l-30-16v94l-41 22z" fill="url(#s)"/><path d="M276 215 406 145v220l-130 70v-70l76-41v-55l-76 41z" fill="url(#c)"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="M Commerce">
+<defs>
+ <radialGradient id="bg" cx="38%" cy="28%" r="86%"><stop offset="0" stop-color="#102c53"/><stop offset=".55" stop-color="#07172d"/><stop offset="1" stop-color="#030a15"/></radialGradient>
+ <linearGradient id="w" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff"/><stop offset=".6" stop-color="#e9eef6"/><stop offset="1" stop-color="#aab7c8"/></linearGradient>
+ <linearGradient id="b" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1681ff"/><stop offset=".58" stop-color="#0066ff"/><stop offset="1" stop-color="#003fbd"/></linearGradient>
+ <filter id="s" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="18" stdDeviation="18" flood-color="#000" flood-opacity=".35"/></filter>
+</defs>
+<rect x="18" y="18" width="476" height="476" rx="104" fill="url(#bg)"/>
+<g filter="url(#s)">
+ <path d="M104 151 236 226v164l-48-27v-99l-35-20v100l-49 28z" fill="url(#w)"/>
+ <path d="M236 226 323 154l86-34v99l-86 69z" fill="url(#b)"/>
+ <path d="M279 292 409 219v149l-49 28v-89l-81 46z" fill="url(#b)"/>
+</g>
+</svg>
