@@ -51,6 +51,27 @@ jobs:
           if ($f.Length -lt 300000) { throw "El instalador generado parece inválido: $($f.Length) bytes" }
           Write-Host "Installer bytes: $($f.Length)"
 
+      - name: Smoke-test installer on Windows
+        shell: pwsh
+        run: |
+          $installer = (Resolve-Path "downloads/M-Commerce-Panel-Maestro-Setup.exe").Path
+          $testDir = Join-Path $env:TEMP "MCommercePanelMaestroTest"
+          if (Test-Path $testDir) { Remove-Item $testDir -Recurse -Force }
+          $desktop = [Environment]::GetFolderPath('Desktop')
+          $shortcut = Join-Path $desktop 'M Commerce - Panel Maestro.lnk'
+          if (Test-Path $shortcut) { Remove-Item $shortcut -Force }
+          $p = Start-Process -FilePath $installer -ArgumentList @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/SP-',('/DIR="' + $testDir + '"'),'/TASKS="desktopicon"') -Wait -PassThru
+          if ($p.ExitCode -ne 0) { throw "El instalador devolvió código $($p.ExitCode)" }
+          if (-not (Test-Path (Join-Path $testDir 'mcommerce-original.ico'))) { throw "No se instaló el icono de M Commerce" }
+          $uninstall = Get-ChildItem $testDir -Filter 'unins*.exe' | Select-Object -First 1
+          if (-not $uninstall) { throw "No se creó el desinstalador" }
+          if (-not (Test-Path $shortcut)) { throw "No se creó el acceso directo del escritorio" }
+          $u = Start-Process -FilePath $uninstall.FullName -ArgumentList @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART') -Wait -PassThru
+          if ($u.ExitCode -ne 0) { throw "El desinstalador devolvió código $($u.ExitCode)" }
+          if (Test-Path $testDir) { Start-Sleep -Seconds 1; Remove-Item $testDir -Recurse -Force -ErrorAction SilentlyContinue }
+          if (Test-Path $shortcut) { Remove-Item $shortcut -Force -ErrorAction SilentlyContinue }
+          Write-Host "Smoke test OK: instalar, crear acceso directo y desinstalar."
+
       - name: Publish generated installer and exact brand assets
         shell: pwsh
         run: |
