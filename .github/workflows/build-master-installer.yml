@@ -20,18 +20,24 @@ jobs:
       - name: Install build tools
         shell: pwsh
         run: |
-          choco install imagemagick -y --no-progress
           choco install innosetup -y --no-progress
+          python -m pip install pillow --quiet
 
-      - name: Build icon and web assets
+      - name: Build exact original icon and web assets
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force -Path assets, dist, downloads | Out-Null
-          $magick = (Get-Command magick.exe -ErrorAction SilentlyContinue).Source
-          if (-not $magick) { throw "ImageMagick no disponible" }
-          & $magick "installer/master/logo-original.svg" -filter Lanczos -resize 192x192 "assets/m-commerce-brand-original-192.png"
-          & $magick "installer/master/logo-original.svg" -filter Lanczos -resize 512x512 "assets/m-commerce-brand-original-512.png"
-          & $magick "installer/master/logo-original.svg" -define icon:auto-resize=256,128,64,48,32,24,16 "installer/master/mcommerce-original.ico"
+          $b64 = Get-Content -Raw "installer/master/logo-original.png.b64"
+          [IO.File]::WriteAllBytes("installer/master/logo-original.png", [Convert]::FromBase64String($b64))
+          @'
+          from PIL import Image
+          src = r"installer/master/logo-original.png"
+          im = Image.open(src).convert("RGBA")
+          im.resize((192,192), Image.Resampling.LANCZOS).save(r"assets/m-commerce-brand-original-192.png")
+          im.resize((512,512), Image.Resampling.LANCZOS).save(r"assets/m-commerce-brand-original-512.png")
+          im.save(r"installer/master/mcommerce-original.ico", format="ICO", sizes=[(16,16),(24,24),(32,32),(48,48),(64,64)])
+          '@ | Set-Content build_exact_brand.py
+          python build_exact_brand.py
 
       - name: Compile real Windows installer
         shell: pwsh
