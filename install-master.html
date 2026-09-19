@@ -28,7 +28,7 @@ h1{font-size:30px;line-height:1.08;margin:10px 0 10px}p{color:#b7c2d4;line-heigh
   <p>La instalación se hace como aplicación de escritorio, separada del navegador, y queda disponible desde Windows.</p>
   <button id="installBtn" class="btn primary" type="button" disabled>PREPARANDO INSTALACIÓN…</button>
   <a class="btn ghost" href="/app-maestro/panel">Abrir panel sin instalar</a>
-  <button id="windowsBtn" class="btn ghost hidden" type="button">INSTALADOR WINDOWS ALTERNATIVO</button>
+  <button id="windowsBtn" class="btn ghost hidden" type="button">INSTALAR EN WINDOWS</button>
   <div id="status" class="status">Validando manifest, service worker e instalación…</div>
   <div class="note">Si Edge o Chrome no ofrecen la instalación PWA, el instalador alternativo crea el acceso directo de escritorio en modo aplicación.</div>
 </main>
@@ -58,7 +58,7 @@ h1{font-size:30px;line-height:1.08;margin:10px 0 10px}p{color:#b7c2d4;line-heigh
       else{installBtn.disabled=false;installBtn.textContent='INSTALAR EN ESTE EQUIPO';windowsBtn.classList.remove('hidden');setStatus('La instalación nativa fue cancelada. Podés reintentar o usar el instalador Windows alternativo.','warn')}
     }catch(e){console.error(e);windowsBtn.classList.remove('hidden');setStatus('El navegador bloqueó el diálogo nativo. Usá el instalador Windows alternativo.','warn')}
   });
-  windowsBtn.addEventListener('click',()=>{location.href='/M-Commerce-Panel-Maestro-Windows.cmd?rev=7';setStatus('Descargando instalador Windows. Abrilo una sola vez para crear el acceso directo.','ok')});
+  windowsBtn.addEventListener('click',()=>{location.href='/M-Commerce-Panel-Maestro-Instalar-v8.bat?rev=8';setStatus('Descargando instalador Windows V8. Abrilo con doble clic. No necesita permisos de administrador.','ok')});
   (async()=>{
     if(standalone()){sync();return}
     try{
