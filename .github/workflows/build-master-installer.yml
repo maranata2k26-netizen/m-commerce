@@ -27,12 +27,43 @@ jobs:
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force -Path assets, dist, downloads | Out-Null
-          $b64 = Get-Content -Raw "installer/master/logo-original.png.b64"
-          [IO.File]::WriteAllBytes("installer/master/logo-original.png", [Convert]::FromBase64String($b64))
           @'
+          import base64, io
           from PIL import Image
-          src = r"installer/master/logo-original.png"
-          im = Image.open(src).convert("RGBA")
+          p = r"installer/master/logo-original.png.b64"
+          s = ''.join(open(p, encoding='utf-8').read().split())
+          def valid_png(raw):
+              try:
+                  if raw[:8] != b'\\x89PNG\\r\\n\\x1a\\n':
+                      return False
+                  im = Image.open(io.BytesIO(raw))
+                  return im.size == (64, 64) and im.format == 'PNG'
+              except Exception:
+                  return False
+          raw = None
+          try:
+              candidate = base64.b64decode(s, validate=True)
+              if valid_png(candidate):
+                  raw = candidate
+          except Exception:
+              pass
+          if raw is None:
+              for i in range(len(s)):
+                  t = s[:i] + s[i+1:]
+                  if len(t) % 4:
+                      continue
+                  try:
+                      candidate = base64.b64decode(t, validate=True)
+                  except Exception:
+                      continue
+                  if valid_png(candidate):
+                      raw = candidate
+                      print(f"Recovered exact PNG by removing one accidental base64 character at index {i}")
+                      break
+          if raw is None:
+              raise SystemExit("Could not recover original M Commerce PNG")
+          open(r"installer/master/logo-original.png","wb").write(raw)
+          im = Image.open(io.BytesIO(raw)).convert("RGBA")
           im.resize((192,192), Image.Resampling.LANCZOS).save(r"assets/m-commerce-brand-original-192.png")
           im.resize((512,512), Image.Resampling.LANCZOS).save(r"assets/m-commerce-brand-original-512.png")
           im.save(r"installer/master/mcommerce-original.ico", format="ICO", sizes=[(16,16),(24,24),(32,32),(48,48),(64,64)])
