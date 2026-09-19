@@ -1,13 +1,16 @@
 [Setup]
 AppId={{A2F2C32A-466A-4E75-9E95-4FEFCEDB9781}
 AppName=M Commerce - Panel Maestro
-AppVersion=1.0.1
+AppVersion=1.0.2
 AppPublisher=M Commerce
 AppPublisherURL=https://m-commerce-ar.vercel.app
 AppSupportURL=https://m-commerce-ar.vercel.app/app-maestro/panel
 DefaultDirName={localappdata}\Programs\M Commerce\Panel Maestro
 DefaultGroupName=M Commerce
 DisableProgramGroupPage=no
+DisableWelcomePage=no
+DisableReadyPage=no
+DisableFinishedPage=no
 PrivilegesRequired=lowest
 WizardStyle=modern
 Compression=lzma2/max
@@ -20,6 +23,7 @@ UninstallDisplayName=M Commerce - Panel Maestro
 CreateUninstallRegKey=yes
 Uninstallable=yes
 CloseApplications=no
+SetupLogging=yes
 RestartApplications=no
 ShowLanguageDialog=no
 MinVersion=10.0.17763
