@@ -1,7 +1,7 @@
 [Setup]
 AppId={{A2F2C32A-466A-4E75-9E95-4FEFCEDB9781}
 AppName=M Commerce - Panel Maestro
-AppVersion=1.0.0
+AppVersion=1.0.1
 AppPublisher=M Commerce
 AppPublisherURL=https://m-commerce-ar.vercel.app
 AppSupportURL=https://m-commerce-ar.vercel.app/app-maestro/panel
