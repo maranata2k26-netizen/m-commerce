@@ -1,7 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
-const URL=Deno.env.get("SUPABASE_URL")??"";
+const SUPABASE_URL=Deno.env.get("SUPABASE_URL")??"";
 const SERVICE=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")??"";
 const PUBLIC_ORIGINS=new Set([
   "https://m-commerce-ar.vercel.app",
@@ -33,14 +33,14 @@ function waMessage(order:any,items:any[],body:any){
 Deno.serve(async(req:Request)=>{
   if(req.method==="OPTIONS")return new Response("ok",{headers:headers(req)});
   if(req.method!=="POST")return json(req,{error:"METHOD_NOT_ALLOWED"},405);
-  if(!URL||!SERVICE)return json(req,{error:"SERVER_NOT_CONFIGURED"},503);
+  if(!SUPABASE_URL||!SERVICE)return json(req,{error:"SERVER_NOT_CONFIGURED"},503);
   try{
     const body=await req.json();
     const siteId=String(body?.site_id||""),attempt=String(body?.checkout_attempt_id||"");
     if(!uuid(siteId)||!uuid(attempt))return json(req,{error:"INVALID_REQUEST",message:"Actualizá la página e intentá nuevamente."},422);
     const method=String(body?.payment_method||"cash");
     if(!["cash","transfer","mercadopago"].includes(method))return json(req,{error:"INVALID_PAYMENT_METHOD",message:"Elegí una forma de pago válida."},422);
-    const admin=createClient(URL,SERVICE,{auth:{persistSession:false}});
+    const admin=createClient(SUPABASE_URL,SERVICE,{auth:{persistSession:false}});
     const {data:site,error:siteError}=await admin.from("sites").select("id,slug,status,is_suspended,subscription_status,custom_domain,domain_status,product_tier").eq("id",siteId).maybeSingle();
     if(siteError)throw siteError;
     if(!site||site.product_tier!=="simple"||site.status!=="published"||site.is_suspended||!["trial","active"].includes(site.subscription_status))return json(req,{error:"SITE_NOT_AVAILABLE",message:"Esta tienda no está disponible en este momento."},403);
@@ -54,7 +54,7 @@ Deno.serve(async(req:Request)=>{
     if(settingsError)throw settingsError;
     if(settings.payment_methods?.[method]!==true)return json(req,{error:"PAYMENT_METHOD_DISABLED",message:"Esa forma de pago no está habilitada."},409);
     if(method==="mercadopago"){
-      const forwarded=await fetch(URL+"/functions/v1/checkout-create",{method:"POST",headers:{"content-type":"application/json","apikey":SERVICE,"authorization":"Bearer "+SERVICE,...(origin?{"origin":origin}:{})},body:JSON.stringify(body)});
+      const forwarded=await fetch(SUPABASE_URL+"/functions/v1/checkout-create",{method:"POST",headers:{"content-type":"application/json","apikey":SERVICE,"authorization":"Bearer "+SERVICE,...(origin?{"origin":origin}:{})},body:JSON.stringify(body)});
       return new Response(await forwarded.text(),{status:forwarded.status,headers:{...headers(req),"content-type":"application/json; charset=utf-8"}});
     }
     const customerName=cut(body?.customer_name,120),phone=cut(body?.customer_phone,40),address=cut(body?.delivery_address,500),delivery=body?.delivery_method==="delivery"?"delivery":"pickup";
@@ -85,7 +85,10 @@ Deno.serve(async(req:Request)=>{
     if(itemError)throw itemError;
     const businessPhone=String(settings.whatsapp_number||"").replace(/\D/g,"");
     const message=waMessage(order,orderItems||[],{...body,payment_method:method});
-    try{EdgeRuntime.waitUntil(fetch(URL+"/functions/v1/j3-push",{method:"POST",headers:{"content-type":"application/json","apikey":SERVICE,"authorization":"Bearer "+SERVICE},body:JSON.stringify({order_id:order.id})}))}catch(e){console.warn("push_queue",e)}
+    try{
+      const pushResponse=await fetch(SUPABASE_URL+"/functions/v1/j3-push",{method:"POST",headers:{"content-type":"application/json","apikey":SERVICE,"authorization":"Bearer "+SERVICE},body:JSON.stringify({order_id:order.id})});
+      if(!pushResponse.ok)console.warn("push_queue_status",pushResponse.status);
+    }catch(e){console.warn("push_queue",e)}
     console.log(JSON.stringify({event:"simple_order_created",site_id:siteId,order_id:order.id,order_number:order.order_number,payment_method:method}));
     return json(req,{kind:"whatsapp",idempotent_replay:!!order.idempotent_replay,order,whatsapp_url:businessPhone?`https://wa.me/${businessPhone}?text=${encodeURIComponent(message)}`:null},order.idempotent_replay?200:201);
   }catch(error){
