@@ -401,6 +401,57 @@ $$;
 revoke all on function public.simple_upsert_category(uuid,jsonb) from public;
 grant execute on function public.simple_upsert_category(uuid,jsonb) to authenticated;
 
+
+create or replace function public.simple_upsert_product(
+  p_site_id uuid,
+  p_product jsonb
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = ''
+as $
+declare
+  v_category_id uuid;
+  v_category_name text;
+  v_product jsonb;
+  v_result public.products;
+begin
+  if not public.platform_is_site_member(p_site_id) then raise exception 'SITE_ACCESS_DENIED'; end if;
+  if not exists (select 1 from public.sites where id=p_site_id and product_tier='simple') then
+    raise exception 'SIMPLE_SITE_REQUIRED';
+  end if;
+
+  begin v_category_id:=nullif(p_product->>'category_id','')::uuid;
+  exception when others then raise exception 'INVALID_CATEGORY_ID'; end;
+  if v_category_id is not null then
+    select name into v_category_name
+    from public.product_categories
+    where id=v_category_id and site_id=p_site_id and active;
+    if v_category_name is null then raise exception 'CATEGORY_NOT_FOUND'; end if;
+  else
+    v_category_name:=left(coalesce(nullif(trim(p_product->>'category'),''),'Productos'),80);
+  end if;
+
+  v_product:=p_product || jsonb_build_object('category',v_category_name);
+  v_result:=jsonb_populate_record(
+    null::public.products,
+    public.platform_upsert_product(p_site_id,v_product)
+  );
+
+  update public.products
+  set category_id=v_category_id, category=v_category_name, updated_at=now()
+  where id=v_result.id and site_id=p_site_id
+  returning * into v_result;
+
+  update public.sites set last_activity_at=now(),updated_at=now() where id=p_site_id;
+  return to_jsonb(v_result);
+end;
+$;
+
+revoke all on function public.simple_upsert_product(uuid,jsonb) from public;
+grant execute on function public.simple_upsert_product(uuid,jsonb) to authenticated;
+
 create or replace function public.simple_dashboard(p_site_id uuid)
 returns jsonb
 language plpgsql
@@ -415,7 +466,8 @@ begin
       'id',s.id,'name',s.name,'slug',s.slug,'status',s.status,
       'product_tier',s.product_tier,'subscription_status',s.subscription_status,
       'is_suspended',s.is_suspended,'created_at',s.created_at,
-      'last_activity_at',s.last_activity_at
+      'last_activity_at',s.last_activity_at,
+      'simple_onboarding_completed_at',s.simple_onboarding_completed_at
     ),
     'settings', to_jsonb(st),
     'subscription', case when sub.site_id is null then null else
@@ -497,7 +549,7 @@ language plpgsql
 security definer
 set search_path = ''
 as $$
-declare v_store jsonb; v_site uuid; v_categories jsonb;
+declare v_store jsonb; v_site uuid; v_categories jsonb; v_branding jsonb;
 begin
   select id into v_site from public.sites
   where lower(slug)=lower(trim(p_slug))
@@ -509,12 +561,17 @@ begin
   if v_site is null then return null; end if;
 
   v_store := public.platform_get_storefront(p_slug);
+  select jsonb_build_object(
+    'logo_url',st.logo_url,'cover_url',st.cover_url,
+    'business_category',st.business_category,'payment_methods',st.payment_methods
+  ) into v_branding from public.settings st where st.site_id=v_site;
   select coalesce(jsonb_agg(to_jsonb(c) order by c.sort_order,c.name),'[]'::jsonb)
   into v_categories
   from public.product_categories c
   where c.site_id=v_site and c.active;
 
-  return v_store || jsonb_build_object('categories',v_categories,'product_tier','simple');
+  return jsonb_set(v_store,'{settings}',coalesce(v_store->'settings','{}'::jsonb) || coalesce(v_branding,'{}'::jsonb),true)
+    || jsonb_build_object('categories',v_categories,'product_tier','simple');
 end;
 $$;
 
