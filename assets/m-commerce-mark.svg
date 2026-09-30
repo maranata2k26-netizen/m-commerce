@@ -1,22 +1,37 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="80 95 350 320" role="img" aria-label="M Commerce">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="190 105 1070 900" role="img" aria-label="M Commerce">
   <defs>
-    <linearGradient id="silver" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#15345f"/>
-      <stop offset=".55" stop-color="#0b2346"/>
-      <stop offset="1" stop-color="#07162d"/>
+    <linearGradient id="leftA" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#07152b"/>
+      <stop offset=".52" stop-color="#102a4f"/>
+      <stop offset="1" stop-color="#081932"/>
     </linearGradient>
-    <linearGradient id="blue" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#21c7ff"/>
-      <stop offset=".42" stop-color="#0b7cff"/>
-      <stop offset="1" stop-color="#1246d7"/>
+    <linearGradient id="leftB" x1=".05" y1=".1" x2=".95" y2=".9">
+      <stop offset="0" stop-color="#07152f"/>
+      <stop offset=".5" stop-color="#12366e"/>
+      <stop offset="1" stop-color="#031432"/>
     </linearGradient>
-    <filter id="shadow" x="-25%" y="-25%" width="150%" height="150%">
-      <feDropShadow dx="0" dy="14" stdDeviation="13" flood-color="#001b45" flood-opacity=".34"/>
-    </filter>
+    <linearGradient id="topBlue" x1=".08" y1=".78" x2=".9" y2=".12">
+      <stop offset="0" stop-color="#08c0ff"/>
+      <stop offset=".18" stop-color="#0a92ff"/>
+      <stop offset=".56" stop-color="#0666f4"/>
+      <stop offset="1" stop-color="#07358f"/>
+    </linearGradient>
+    <linearGradient id="midBlue" x1=".05" y1=".08" x2=".92" y2=".92">
+      <stop offset="0" stop-color="#02a8ff"/>
+      <stop offset=".35" stop-color="#0077ff"/>
+      <stop offset=".78" stop-color="#0755e8"/>
+      <stop offset="1" stop-color="#0d3190"/>
+    </linearGradient>
+    <linearGradient id="tailBlue" x1=".15" y1=".15" x2=".85" y2=".85">
+      <stop offset="0" stop-color="#0a55df"/>
+      <stop offset=".48" stop-color="#003ebd"/>
+      <stop offset="1" stop-color="#006eff"/>
+    </linearGradient>
   </defs>
-  <g filter="url(#shadow)">
-    <path d="M104 151 236 226v164l-48-27v-99l-35-20v100l-49 28z" fill="url(#silver)"/>
-    <path d="M236 226 323 154l86-34v99l-86 69z" fill="url(#blue)"/>
-    <path d="M279 292 409 219v149l-49 28v-89l-81 46z" fill="url(#blue)"/>
-  </g>
+
+  <path d="M206 132 L404 278 L404 859 L206 990 Z" fill="url(#leftA)"/>
+  <path d="M404 278 L701 508 L701 927 L521 782 L521 559 L404 463 Z" fill="url(#leftB)"/>
+  <path d="M640 465 L1084 148 L1240 120 L1240 749 L1062 630 L1062 378 L809 565 L771 579 Z" fill="url(#topBlue)"/>
+  <path d="M1042 822 L1235 749 L1241 872 L1042 990 Z" fill="url(#tailBlue)"/>
+  <path d="M803 630 L1062 630 L1235 749 L803 915 Z" fill="url(#midBlue)"/>
 </svg>
