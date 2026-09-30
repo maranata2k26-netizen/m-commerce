@@ -308,6 +308,13 @@ begin
   if jsonb_typeof(v_methods) <> 'object' or jsonb_typeof(v_fulfillment) <> 'object' then
     raise exception 'INVALID_CONFIGURATION';
   end if;
+  if coalesce((v_methods->>'mercadopago')::boolean,false)
+     and not exists (
+       select 1 from public.mercadopago_connections
+       where site_id=p_site_id and status='connected'
+     ) then
+    raise exception 'MERCADOPAGO_NOT_CONNECTED';
+  end if;
 
   update public.settings set
     business_name = left(trim(coalesce(p_profile->>'business_name',business_name)),100),
@@ -477,6 +484,32 @@ $$;
 
 revoke all on function public.simple_upsert_product(uuid,jsonb) from public;
 grant execute on function public.simple_upsert_product(uuid,jsonb) to authenticated;
+
+create or replace function public.simple_mercadopago_status(p_site_id uuid)
+returns jsonb
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare v_status text;
+begin
+  if not public.platform_is_site_member(p_site_id) then raise exception 'SITE_ACCESS_DENIED'; end if;
+  if not exists (select 1 from public.sites where id=p_site_id and product_tier='simple') then
+    raise exception 'SIMPLE_SITE_REQUIRED';
+  end if;
+  select status into v_status
+  from public.mercadopago_connections
+  where site_id=p_site_id
+  limit 1;
+  return jsonb_build_object(
+    'connected',coalesce(v_status='connected',false),
+    'status',coalesce(v_status,'not_connected')
+  );
+end;
+$$;
+
+revoke all on function public.simple_mercadopago_status(uuid) from public;
+grant execute on function public.simple_mercadopago_status(uuid) to authenticated;
 
 create or replace function public.simple_my_store()
 returns jsonb
