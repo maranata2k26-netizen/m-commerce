@@ -410,7 +410,7 @@ returns jsonb
 language plpgsql
 security definer
 set search_path = ''
-as $
+as $$
 declare
   v_category_id uuid;
   v_category_name text;
@@ -446,7 +446,7 @@ begin
   update public.sites set last_activity_at=now(),updated_at=now() where id=p_site_id;
   return to_jsonb(v_result);
 end;
-$;
+$$;
 
 revoke all on function public.simple_upsert_product(uuid,jsonb) from public;
 grant execute on function public.simple_upsert_product(uuid,jsonb) to authenticated;
