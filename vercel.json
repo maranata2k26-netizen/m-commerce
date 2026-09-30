@@ -15,6 +15,10 @@
       "destination": "/simple/index.html"
     },
     {
+      "source": "/simple/pro",
+      "destination": "/simple/index.html"
+    },
+    {
       "source": "/tienda/:slug",
       "destination": "/simple/index.html"
     },
