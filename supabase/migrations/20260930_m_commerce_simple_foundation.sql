@@ -451,6 +451,94 @@ $$;
 revoke all on function public.simple_upsert_product(uuid,jsonb) from public;
 grant execute on function public.simple_upsert_product(uuid,jsonb) to authenticated;
 
+create or replace function public.simple_my_store()
+returns jsonb
+language plpgsql
+security definer
+set search_path = ''
+as $
+declare v_result jsonb;
+begin
+  if (select auth.uid()) is null then raise exception 'AUTH_REQUIRED'; end if;
+  select jsonb_build_object(
+    'id',s.id,'name',s.name,'slug',s.slug,'status',s.status,
+    'product_tier',s.product_tier,'subscription_status',s.subscription_status,
+    'is_suspended',s.is_suspended,'created_at',s.created_at
+  ) into v_result
+  from public.site_memberships m
+  join public.sites s on s.id=m.site_id
+  where m.user_id=(select auth.uid()) and m.status='active'
+    and s.product_tier='simple'
+  order by s.created_at
+  limit 1;
+  return v_result;
+end;
+$;
+
+revoke all on function public.simple_my_store() from public;
+grant execute on function public.simple_my_store() to authenticated;
+
+create or replace function public.simple_master_stores()
+returns jsonb
+language plpgsql
+security definer
+set search_path = ''
+as $
+declare v_result jsonb;
+begin
+  if not public.platform_is_master_admin() then raise exception 'ADMIN_REQUIRED'; end if;
+  select coalesce(jsonb_agg(jsonb_build_object(
+    'id',s.id,'name',s.name,'slug',s.slug,'owner_id',s.owner_id,
+    'owner_email',u.email,'created_at',s.created_at,'status',s.status,
+    'subscription_status',s.subscription_status,'is_suspended',s.is_suspended,
+    'last_activity_at',s.last_activity_at,
+    'products',(select count(*) from public.products p where p.site_id=s.id),
+    'orders',(select count(*) from public.orders o where o.site_id=s.id)
+  ) order by s.created_at desc),'[]'::jsonb) into v_result
+  from public.sites s
+  left join auth.users u on u.id=s.owner_id
+  where s.product_tier='simple';
+  return v_result;
+end;
+$;
+
+revoke all on function public.simple_master_stores() from public;
+grant execute on function public.simple_master_stores() to authenticated;
+
+create or replace function public.simple_admin_set_store_state(
+  p_site_id uuid,
+  p_action text
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = ''
+as $
+declare v_site public.sites;
+begin
+  if not public.platform_is_master_admin() then raise exception 'ADMIN_REQUIRED'; end if;
+  if p_action not in ('suspend','reactivate') then raise exception 'INVALID_ACTION'; end if;
+  update public.sites
+  set is_suspended=(p_action='suspend'), updated_at=now(), last_activity_at=now()
+  where id=p_site_id and product_tier='simple'
+  returning * into v_site;
+  if v_site.id is null then raise exception 'SIMPLE_SITE_NOT_FOUND'; end if;
+  perform public.platform_audit(
+    p_site_id,
+    case when p_action='suspend' then 'simple_store_suspended' else 'simple_store_reactivated' end,
+    'site',p_site_id::text,jsonb_build_object('action',p_action)
+  );
+  return jsonb_build_object(
+    'id',v_site.id,'status',v_site.status,
+    'subscription_status',v_site.subscription_status,
+    'is_suspended',v_site.is_suspended
+  );
+end;
+$;
+
+revoke all on function public.simple_admin_set_store_state(uuid,text) from public;
+grant execute on function public.simple_admin_set_store_state(uuid,text) to authenticated;
+
 create or replace function public.simple_dashboard(p_site_id uuid)
 returns jsonb
 language plpgsql
@@ -523,6 +611,7 @@ begin
   update public.settings set simple_onboarding_step=10,updated_at=now() where site_id=p_site_id;
   update public.sites set
     simple_onboarding_completed_at=coalesce(simple_onboarding_completed_at,now()),
+    status=case when subscription_status in ('trial','active') then 'published' else status end,
     last_activity_at=now(),
     updated_at=now()
   where id=p_site_id returning * into v_site;
