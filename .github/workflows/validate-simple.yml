@@ -1,0 +1,23 @@
+name: Validate M Commerce Simple
+on:
+  push:
+    branches: ["feature/m-commerce-simple"]
+  pull_request:
+    paths:
+      - "simple/**"
+      - "supabase/**"
+      - "vercel.json"
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Validate browser JavaScript
+        run: node --check simple/simple.js
+      - name: Validate Vercel config
+        run: node -e "JSON.parse(require('fs').readFileSync('vercel.json','utf8'))"
+      - name: Type-check Edge Functions
+        run: deno check supabase/functions/simple-checkout/index.ts supabase/functions/j3-billing/index.ts supabase/functions/mercadopago-connect/index.ts supabase/functions/simple-pro-lead/index.ts
