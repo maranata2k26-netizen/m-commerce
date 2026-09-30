@@ -169,6 +169,25 @@ create policy "simple members delete store images"
     and (select public.platform_is_site_member(((storage.foldername(name))[2])::uuid))
   );
 
+create or replace function public.simple_public_plan()
+returns jsonb
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select jsonb_build_object(
+    'code',p.code,'name',p.name,'monthly_price',p.monthly_price,
+    'currency_code',p.currency_code,'features',p.features
+  )
+  from public.subscription_plans p
+  where p.code='simple-monthly' and p.active
+  limit 1;
+$$;
+
+revoke all on function public.simple_public_plan() from public;
+grant execute on function public.simple_public_plan() to anon, authenticated;
+
 create or replace function public.simple_slugify(p_value text)
 returns text
 language sql
