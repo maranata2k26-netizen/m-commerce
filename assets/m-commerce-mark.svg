@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="80 95 350 320" role="img" aria-label="M Commerce">
+  <defs>
+    <linearGradient id="silver" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#15345f"/>
+      <stop offset=".55" stop-color="#0b2346"/>
+      <stop offset="1" stop-color="#07162d"/>
+    </linearGradient>
+    <linearGradient id="blue" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#21c7ff"/>
+      <stop offset=".42" stop-color="#0b7cff"/>
+      <stop offset="1" stop-color="#1246d7"/>
+    </linearGradient>
+    <filter id="shadow" x="-25%" y="-25%" width="150%" height="150%">
+      <feDropShadow dx="0" dy="14" stdDeviation="13" flood-color="#001b45" flood-opacity=".34"/>
+    </filter>
+  </defs>
+  <g filter="url(#shadow)">
+    <path d="M104 151 236 226v164l-48-27v-99l-35-20v100l-49 28z" fill="url(#silver)"/>
+    <path d="M236 226 323 154l86-34v99l-86 69z" fill="url(#blue)"/>
+    <path d="M279 292 409 219v149l-49 28v-89l-81 46z" fill="url(#blue)"/>
+  </g>
+</svg>
