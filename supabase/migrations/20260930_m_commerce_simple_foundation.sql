@@ -434,15 +434,14 @@ begin
   end if;
 
   v_product:=p_product || jsonb_build_object('category',v_category_name);
-  v_result:=jsonb_populate_record(
-    null::public.products,
-    public.platform_upsert_product(p_site_id,v_product)
-  );
+  v_product:=public.platform_upsert_product(p_site_id,v_product);
 
   update public.products
   set category_id=v_category_id, category=v_category_name, updated_at=now()
-  where id=v_result.id and site_id=p_site_id
+  where id=(v_product->>'id')::uuid and site_id=p_site_id
   returning * into v_result;
+
+  if v_result.id is null then raise exception 'PRODUCT_NOT_FOUND'; end if;
 
   update public.sites set last_activity_at=now(),updated_at=now() where id=p_site_id;
   return to_jsonb(v_result);
