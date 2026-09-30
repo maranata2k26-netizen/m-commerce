@@ -36,6 +36,11 @@ function authView(mode){
  document.getElementById("recover").onclick=async()=>{const email=document.getElementById("email").value.trim();if(!email)return toast("Ingresá tu email primero.",true);const {error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:location.origin+"/simple/app?reset=1"});if(error)fail(error);else toast("Te enviamos un enlace de recuperación.")};
 }
 function setBusy(el,on){if(!el)return;el.disabled=on;el.dataset.label??=el.textContent;el.textContent=on?"Procesando…":el.dataset.label}
+async function adminRoute(){
+ const session=await getSession();if(!session)return authView("login");
+ let stores;try{stores=await rpc("simple_master_stores")}catch(e){app.innerHTML='<main class="loading"><h1>Acceso restringido</h1><p>Esta sección requiere una cuenta del Panel Maestro.</p></main>';return}
+ const render=()=>{app.innerHTML=`<div class="app-shell"><header class="app-head"><div class="inner"><span class="brand">M COMMERCE <small>SIMPLE · MAESTRO</small></span><div><a class="mini" href="/app-maestro/panel">Panel Maestro</a> <button id="logout" class="mini">Salir</button></div></div></header><main class="app-main"><section class="welcome"><div><div class="eyebrow">M Commerce Simple</div><h1>Comercios autogestionados</h1></div><span class="status active">${stores.length} tiendas</span></section><section class="list">${stores.map(x=>`<article class="card row"><div class="row-main"><div class="row-title">${esc(x.name)} <span class="status">SIMPLE</span></div><div class="row-sub">${esc(x.owner_email||"Sin email")} · Alta ${new Date(x.created_at).toLocaleDateString("es-AR")} · Suscripción ${esc(x.subscription_status)} · Tienda ${esc(x.status)}</div><div class="row-sub">${x.products} productos · ${x.orders} pedidos · Última actividad ${new Date(x.last_activity_at).toLocaleString("es-AR")}</div></div><button class="btn admin-state" data-id="${x.id}" data-action="${x.is_suspended?"reactivate":"suspend"}">${x.is_suspended?"Reactivar":"Suspender"}</button></article>`).join("")||'<div class="card empty">Todavía no hay comercios Simple.</div>'}</section></main></div>`;document.getElementById("logout").onclick=logout;document.querySelectorAll(".admin-state").forEach(b=>b.onclick=async()=>{try{setBusy(b,true);await rpc("simple_admin_set_store_state",{p_site_id:b.dataset.id,p_action:b.dataset.action});stores=await rpc("simple_master_stores");render();toast("Estado actualizado y auditado.")}catch(e){fail(e)}finally{setBusy(b,false)}})};render();
+}
 async function appRoute(){
  const session=await getSession();if(!session)return authView(new URLSearchParams(location.search).get("mode"));
  let site=await rpc("simple_my_store").catch(()=>null);
@@ -171,5 +176,5 @@ async function storefront(slug){
  render();
 }
 async function logout(){await sb.auth.signOut();location.href="/simple"}
-(async()=>{try{loading();if(route.startsWith("/tienda/"))await storefront(route.split("/").filter(Boolean).pop());else if(route.startsWith("/simple/app"))await appRoute();else landing()}catch(e){app.innerHTML='<main class="loading"><h1>No pudimos cargar M Commerce</h1><p>Actualizá la página o intentá más tarde.</p></main>';fail(e)}})();
+(async()=>{try{loading();if(route.startsWith("/tienda/"))await storefront(route.split("/").filter(Boolean).pop());else if(route.startsWith("/simple/admin"))await adminRoute();else if(route.startsWith("/simple/app"))await appRoute();else landing()}catch(e){app.innerHTML='<main class="loading"><h1>No pudimos cargar M Commerce</h1><p>Actualizá la página o intentá más tarde.</p></main>';fail(e)}})();
 })();
