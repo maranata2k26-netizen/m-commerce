@@ -67,14 +67,10 @@ Deno.serve(async(req:Request)=>{
     const ip=(req.headers.get("x-forwarded-for")??"unknown").split(",")[0].trim();
     const {data:allowed,error:rateError}=await admin.rpc("checkout_rate_limit_v19",{p_key_hash:await sha(`${ip}|${siteId}|simple-checkout`),p_limit:30});
     if(rateError)throw rateError;if(!allowed)return json(req,{error:"TOO_MANY_REQUESTS",message:"Esperá un minuto antes de volver a intentar."},429);
-    const {data:order,error:createError}=await admin.rpc("create_checkout_order_v117",{
-      p_customer_name:customerName,p_customer_phone:phone,p_customer_email:"",
+    const {data:order,error:createError}=await admin.rpc("simple_create_offline_order",{
+      p_customer_name:customerName,p_customer_phone:phone,
       p_delivery_address:address||null,p_delivery_method:delivery,p_notes:cut(body?.notes,1000),
-      p_payment_method:method,p_site_id:siteId,p_items:items,p_checkout_attempt_id:attempt,
-      p_delivery_latitude:null,p_delivery_longitude:null,p_delivery_place_id:null,
-      p_delivery_address_formatted:null,p_delivery_address_source:delivery==="delivery"?"manual":null,
-      p_delivery_unit:null,p_delivery_instructions:null,p_promotion_code:null,
-      p_marketing_opt_in:false,p_redeem_points:false,p_cart_token:null,p_order_source:"simple"
+      p_payment_method:method,p_site_id:siteId,p_items:items,p_checkout_attempt_id:attempt
     });
     if(createError)throw createError;
     const {data:orderItems,error:itemError}=await admin.from("order_items").select("product_name,variant_name,quantity,line_total").eq("order_id",order.id).eq("site_id",siteId).order("id");
