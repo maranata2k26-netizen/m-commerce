@@ -19,5 +19,5 @@ jobs:
         run: node --check simple/simple.js
       - name: Validate Vercel config
         run: node -e "JSON.parse(require('fs').readFileSync('vercel.json','utf8'))"
-      - name: Type-check Edge Function
-        run: deno check supabase/functions/simple-checkout/index.ts
+      - name: Type-check Edge Functions
+        run: deno check supabase/functions/simple-checkout/index.ts supabase/functions/j3-billing/index.ts supabase/functions/mercadopago-connect/index.ts
