@@ -14,20 +14,146 @@ const setSeo=(title,description,url=location.href,image="")=>{document.title=tit
 const getSession=async()=>{const {data,error}=await sb.auth.getSession();if(error)throw error;return data.session};
 const field=(name,label,type="text",value="",extra="")=>`<div class="field"><label for="${name}">${label}</label><input id="${name}" name="${name}" type="${type}" value="${esc(value)}" ${extra}></div>`;
 const route=decodeURIComponent(location.pathname);
-function nav(){return `<nav class="nav"><a class="brand" href="/simple">M COMMERCE<small>TU TIENDA ONLINE</small></a><div class="nav-actions"><a class="btn secondary" href="/simple/app">Ingresar</a><a class="btn brand" href="/simple/app?mode=register">Crear mi tienda</a></div></nav>`}
+function nav(){return `<nav class="nav site-nav">
+  <a class="brand brand-lockup" href="/simple" aria-label="M Commerce - inicio">
+    <img src="/assets/m-commerce-brand-original-192.png" alt="M Commerce">
+    <span><strong>M COMMERCE</strong><small>TU TIENDA ONLINE</small></span>
+  </a>
+  <div class="nav-links" aria-label="Navegación principal">
+    <a href="/simple#como-funciona">Cómo funciona</a>
+    <a href="/simple#planes">Planes</a>
+    <a href="/simple#comparacion">Diferencias</a>
+    <a href="https://wa.me/5493329698591?text=Hola%20Ema%2C%20vi%20M%20Commerce%20y%20quiero%20asesoramiento." target="_blank" rel="noopener noreferrer">Contacto</a>
+  </div>
+  <div class="nav-actions">
+    <a class="btn secondary" href="/simple/app">Ingresar</a>
+    <a class="btn brand" href="/simple/app?mode=register">Crear mi tienda</a>
+  </div>
+</nav>`}
 function landing(){
- document.title="M Commerce · Tu tienda online";
- app.innerHTML=`<div class="shell">${nav()}<main id="app-main">
- <section class="hero"><div class="eyebrow">M Commerce</div><h1>Tu tienda online.</h1><p>Mostrá tus productos, compartí tu enlace y recibí pedidos con una experiencia profesional desde cualquier celular.</p><div class="hero-actions"><a class="btn brand" href="/simple/app?mode=register">Crear mi tienda</a><a class="btn secondary" href="#planes">Ver opciones</a></div></section>
- <section id="planes" class="plans">
-  <article class="plan simple"><div class="eyebrow">Autogestionable</div><h2>M Commerce Simple</h2><p>Una solución clara y económica para empezar a vender online sin conocimientos técnicos.</p><div class="price" id="simple-price">Plan mensual</div><ul class="ticks"><li>Catálogo y productos</li><li>Carrito y pedidos</li><li>WhatsApp integrado</li><li>Retiro y delivery</li><li>Administración desde el celular</li></ul><a class="btn brand" href="/simple/app?mode=register">Crear mi tienda</a></article>
-  <article class="plan"><div class="eyebrow">Personalizado</div><h2>M Commerce PRO</h2><p>Una tienda diseñada para tu negocio, con identidad visual, funciones avanzadas e implementación personalizada.</p><ul class="ticks"><li>Diseño propio</li><li>Integraciones avanzadas</li><li>Funciones a medida</li><li>Acompañamiento de M Commerce</li></ul><a class="btn" href="/simple/pro">Quiero mi tienda PRO</a></article>
- </section></main></div>`;
+ setSeo("M Commerce | Tu tienda online","Creá tu tienda online, cargá productos, recibí pedidos y elegí entre M Commerce Simple o una solución PRO personalizada.",location.origin+"/simple");
+ app.innerHTML=`<div class="shell landing-shell">${nav()}<main id="app-main">
+ <section class="hero hero-pro">
+   <div class="hero-copy">
+     <div class="eyebrow">M Commerce · Plataforma de ventas online</div>
+     <h1>Tu tienda online, lista para vender.</h1>
+     <p>Mostrá tus productos, compartí tu enlace y recibí pedidos con una experiencia profesional desde cualquier celular.</p>
+     <div class="hero-actions">
+       <a class="btn brand" href="/simple/app?mode=register">Crear mi tienda</a>
+       <a class="btn secondary hero-secondary" href="#planes">Ver planes</a>
+       <a class="btn whatsapp-btn" href="https://wa.me/5493329698591?text=Hola%20Ema%2C%20vi%20M%20Commerce%20y%20quiero%20asesoramiento." target="_blank" rel="noopener noreferrer"><svg aria-hidden="true" viewBox="0 0 32 32" width="20" height="20"><path fill="currentColor" d="M19.1 17.4c-.3-.2-1.8-.9-2.1-1-.3-.1-.5-.2-.7.2-.2.3-.8 1-.9 1.2-.2.2-.3.2-.6.1-1.8-.9-3-1.7-4.2-3.8-.3-.5.3-.5.9-1.6.1-.2 0-.4 0-.6-.1-.2-.7-1.7-1-2.3-.3-.7-.6-.6-.8-.6h-.7c-.2 0-.6.1-.9.4-.3.3-1.2 1.2-1.2 2.9s1.2 3.3 1.4 3.6c.2.2 2.4 3.7 5.9 5.2.8.4 1.5.6 2 .7.8.3 1.6.2 2.2.1.7-.1 1.8-.7 2-1.4.3-.7.3-1.3.2-1.4-.1-.2-.3-.2-.6-.4M16.1 26h-.1c-1.8 0-3.5-.5-5-1.4l-.4-.2-3.7 1 1-3.6-.2-.4A10 10 0 1 1 16.1 26m8.5-18.6A12 12 0 0 0 5.7 21.9L4 28l6.3-1.6A12 12 0 1 0 24.6 7.4"/></svg><span>Hablá con Ema</span></a>
+     </div>
+     <div class="trust-line"><span>✓ Alta online</span><span>✓ Catálogo profesional</span><span>✓ Pedidos y cobros</span><span>✓ Gestión desde celular</span></div>
+   </div>
+   <div class="hero-brand-card" aria-label="M Commerce">
+     <img src="/assets/m-commerce-brand-original-512.png" alt="Logo M Commerce">
+     <strong>M COMMERCE</strong>
+     <span>TU TIENDA ONLINE</span>
+     <small>Simple para empezar. PRO para crecer.</small>
+   </div>
+ </section>
+
+ <section class="company-strip" aria-label="Beneficios de M Commerce">
+   <div><b>Una sola plataforma</b><span>Catálogo, carrito, pedidos y gestión.</span></div>
+   <div><b>Lista para compartir</b><span>Tu negocio con un enlace propio.</span></div>
+   <div><b>Hecha para vender</b><span>Experiencia clara en celular y PC.</span></div>
+   <div><b>Escalable</b><span>Empezá Simple y pasá a PRO cuando lo necesites.</span></div>
+ </section>
+
+ <section id="como-funciona" class="landing-section">
+   <div class="section-intro"><div class="eyebrow">Así de simple</div><h2>De cero a tienda online en pocos pasos.</h2><p>No necesitás saber programar. M Commerce te guía y después administrás tu catálogo desde el mismo panel.</p></div>
+   <div class="steps-grid">
+     <article><span>01</span><h3>Creás tu cuenta</h3><p>Registrás tu comercio y elegís tu enlace.</p></article>
+     <article><span>02</span><h3>Cargás tu negocio</h3><p>Logo, datos, categorías, productos, fotos y precios.</p></article>
+     <article><span>03</span><h3>Conectás tus cobros</h3><p>Podés vincular el Mercado Pago propio de tu comercio.</p></article>
+     <article><span>04</span><h3>Compartís y vendés</h3><p>Mandás tu link y recibís pedidos desde tu tienda.</p></article>
+   </div>
+ </section>
+
+ <section class="catalog-showcase">
+   <div class="catalog-copy">
+     <div class="eyebrow">M Commerce Simple</div>
+     <h2>Así puede verse tu catálogo online.</h2>
+     <p>Fotos reales, precios claros, categorías y botón para agregar al pedido. Tu cliente ve una tienda limpia y vos la administrás desde el panel.</p>
+     <ul class="feature-checks">
+       <li>Subís fotos desde el celular</li>
+       <li>Cambiás precios y disponibilidad</li>
+       <li>Organizás por categorías</li>
+       <li>Compartís tu tienda con link y QR</li>
+     </ul>
+     <a class="btn brand" href="/simple/app?mode=register">Quiero crear mi catálogo</a>
+   </div>
+   <div class="catalog-preview" role="img" aria-label="Ejemplo realista de catálogo M Commerce Simple">
+     <div class="catalog-phone">
+       <div class="catalog-top"><span class="catalog-avatar">MC</span><div><b>Mi Tienda</b><small>Catálogo online</small></div><span class="catalog-bag">🛍</span></div>
+       <div class="catalog-chips"><span class="active">Todo</span><span>Novedades</span><span>Accesorios</span></div>
+       <div class="catalog-demo-grid">
+         <article><img loading="lazy" src="https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&w=700&q=82" alt="Anillo de ejemplo"><div><b>Anillo Silver</b><strong>$ 27.900</strong><button type="button" tabindex="-1">Agregar</button></div></article>
+         <article><img loading="lazy" src="https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=700&q=82" alt="Cadena de ejemplo"><div><b>Cadena Urban</b><strong>$ 69.900</strong><button type="button" tabindex="-1">Agregar</button></div></article>
+         <article><img loading="lazy" src="https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&w=700&q=82" alt="Accesorio de ejemplo"><div><b>Accesorio Premium</b><strong>$ 54.900</strong><button type="button" tabindex="-1">Agregar</button></div></article>
+       </div>
+       <div class="catalog-cart">Ver pedido <b>3 productos</b></div>
+     </div>
+   </div>
+ </section>
+
+ <section id="planes" class="landing-section plans-section">
+   <div class="section-intro center"><div class="eyebrow">Elegí cómo empezar</div><h2>Simple para arrancar. PRO para llevarlo más lejos.</h2><p>Las dos opciones usan M Commerce, pero están pensadas para necesidades distintas.</p></div>
+   <div class="plans upgraded-plans">
+    <article class="plan simple">
+      <div class="plan-top"><div><div class="eyebrow">Autogestionable</div><h2>M Commerce Simple</h2></div><span class="plan-badge light">Empezá hoy</span></div>
+      <p>Para emprendedores y comercios que quieren una tienda profesional, rápida y económica, administrada por ellos mismos.</p>
+      <div class="price" id="simple-price">Plan mensual</div>
+      <ul class="ticks compact-ticks">
+        <li>Alta online autogestionable</li><li>Catálogo con fotos, categorías y precios</li><li>Carrito y pedidos online</li><li>Stock y disponibilidad</li><li>Variantes de productos</li><li>Retiro y delivery</li><li>Link propio + QR para compartir</li><li>Panel desde celular o PC</li><li>Mercado Pago del comercio</li>
+      </ul>
+      <a class="btn brand full" href="/simple/app?mode=register">Crear mi tienda Simple</a>
+    </article>
+
+    <article class="plan pro-plan">
+      <div class="pro-glow"></div>
+      <div class="plan-top"><div><div class="eyebrow">Solución personalizada</div><h2>M Commerce PRO</h2></div><span class="plan-badge pro">Recomendado para negocios</span></div>
+      <p>Para comercios que necesitan una presencia más fuerte, operaciones más complejas y una solución adaptada a su negocio.</p>
+      <ul class="ticks compact-ticks pro-ticks">
+        <li>Diseño e identidad visual personalizados</li><li>Dominio propio o subdominio profesional</li><li>Panel de comercio completo</li><li>Editor visual avanzado</li><li>Mercado Pago integrado</li><li>Gestión avanzada de pedidos</li><li>Seguimiento de pedidos</li><li>Stock y variantes avanzadas</li><li>Categorías y estructura a medida</li><li>Sucursales</li><li>Delivery y retiro configurables</li><li>Reservas cuando el rubro lo requiere</li><li>Notificaciones</li><li>Reportes y estadísticas</li><li>Soporte prioritario</li><li>Configuración e implementación personalizada</li>
+      </ul>
+      <div class="pro-actions"><a class="btn whatsapp-btn pro-wa full" href="https://wa.me/5493329698591?text=Hola%20Ema%2C%20vi%20M%20Commerce%20y%20quiero%20asesoramiento." target="_blank" rel="noopener noreferrer"><svg aria-hidden="true" viewBox="0 0 32 32" width="20" height="20"><path fill="currentColor" d="M19.1 17.4c-.3-.2-1.8-.9-2.1-1-.3-.1-.5-.2-.7.2-.2.3-.8 1-.9 1.2-.2.2-.3.2-.6.1-1.8-.9-3-1.7-4.2-3.8-.3-.5.3-.5.9-1.6.1-.2 0-.4 0-.6-.1-.2-.7-1.7-1-2.3-.3-.7-.6-.6-.8-.6h-.7c-.2 0-.6.1-.9.4-.3.3-1.2 1.2-1.2 2.9s1.2 3.3 1.4 3.6c.2.2 2.4 3.7 5.9 5.2.8.4 1.5.6 2 .7.8.3 1.6.2 2.2.1.7-.1 1.8-.7 2-1.4.3-.7.3-1.3.2-1.4-.1-.2-.3-.2-.6-.4M16.1 26h-.1c-1.8 0-3.5-.5-5-1.4l-.4-.2-3.7 1 1-3.6-.2-.4A10 10 0 1 1 16.1 26m8.5-18.6A12 12 0 0 0 5.7 21.9L4 28l6.3-1.6A12 12 0 1 0 24.6 7.4"/></svg><span>Hablá con Ema por PRO</span></a><a class="btn secondary full" href="/simple/pro">Enviar solicitud PRO</a></div>
+    </article>
+   </div>
+ </section>
+
+ <section id="comparacion" class="landing-section comparison-section">
+   <div class="section-intro"><div class="eyebrow">Comparación rápida</div><h2>La diferencia se ve en el nivel de personalización.</h2></div>
+   <div class="compare-table" role="table" aria-label="Comparación M Commerce Simple y PRO">
+     <div class="compare-row head" role="row"><div>Función</div><div>Simple</div><div>PRO</div></div>
+     <div class="compare-row"><div>Crear y administrar productos</div><div>✓</div><div>✓</div></div>
+     <div class="compare-row"><div>Carrito y pedidos online</div><div>✓</div><div>✓</div></div>
+     <div class="compare-row"><div>Mercado Pago propio</div><div>✓</div><div>✓</div></div>
+     <div class="compare-row"><div>Diseño personalizado</div><div>Base M Commerce</div><div><b>✓ A medida</b></div></div>
+     <div class="compare-row"><div>Editor avanzado / funciones especiales</div><div>—</div><div><b>✓</b></div></div>
+     <div class="compare-row"><div>Sucursales, reservas y flujos complejos</div><div>—</div><div><b>✓</b></div></div>
+     <div class="compare-row"><div>Implementación y soporte prioritario</div><div>Autogestión</div><div><b>✓ Equipo M Commerce</b></div></div>
+   </div>
+ </section>
+
+ <section class="final-cta">
+   <img src="/assets/m-commerce-brand-original-192.png" alt="" aria-hidden="true">
+   <div><div class="eyebrow">M Commerce</div><h2>Tu negocio puede empezar a vender online hoy.</h2><p>Creá tu tienda Simple o hablá con Ema si necesitás una solución PRO.</p></div>
+   <div class="final-actions"><a class="btn brand" href="/simple/app?mode=register">Crear mi tienda</a><a class="btn whatsapp-btn" href="https://wa.me/5493329698591?text=Hola%20Ema%2C%20vi%20M%20Commerce%20y%20quiero%20asesoramiento." target="_blank" rel="noopener noreferrer"><svg aria-hidden="true" viewBox="0 0 32 32" width="20" height="20"><path fill="currentColor" d="M19.1 17.4c-.3-.2-1.8-.9-2.1-1-.3-.1-.5-.2-.7.2-.2.3-.8 1-.9 1.2-.2.2-.3.2-.6.1-1.8-.9-3-1.7-4.2-3.8-.3-.5.3-.5.9-1.6.1-.2 0-.4 0-.6-.1-.2-.7-1.7-1-2.3-.3-.7-.6-.6-.8-.6h-.7c-.2 0-.6.1-.9.4-.3.3-1.2 1.2-1.2 2.9s1.2 3.3 1.4 3.6c.2.2 2.4 3.7 5.9 5.2.8.4 1.5.6 2 .7.8.3 1.6.2 2.2.1.7-.1 1.8-.7 2-1.4.3-.7.3-1.3.2-1.4-.1-.2-.3-.2-.6-.4M16.1 26h-.1c-1.8 0-3.5-.5-5-1.4l-.4-.2-3.7 1 1-3.6-.2-.4A10 10 0 1 1 16.1 26m8.5-18.6A12 12 0 0 0 5.7 21.9L4 28l6.3-1.6A12 12 0 1 0 24.6 7.4"/></svg><span>Hablá con Ema</span></a></div>
+ </section>
+ </main>
+ <footer class="site-footer">
+   <div class="footer-brand"><img src="/assets/m-commerce-brand-original-192.png" alt="M Commerce"><div><strong>M COMMERCE</strong><span>Tu tienda online</span></div></div>
+   <div class="footer-links"><a href="#planes">Planes</a><a href="#como-funciona">Cómo funciona</a><a href="#comparacion">Simple vs PRO</a><a href="https://wa.me/5493329698591?text=Hola%20Ema%2C%20vi%20M%20Commerce%20y%20quiero%20asesoramiento." target="_blank" rel="noopener noreferrer">WhatsApp</a><a href="https://www.instagram.com/mcommercee/" target="_blank" rel="noopener noreferrer">Instagram</a></div>
+   <small>© M Commerce · Plataforma de tiendas online.</small>
+ </footer>
+ <a class="floating-whatsapp" href="https://wa.me/5493329698591?text=Hola%20Ema%2C%20vi%20M%20Commerce%20y%20quiero%20asesoramiento." target="_blank" rel="noopener noreferrer" aria-label="Hablar con Ema por WhatsApp"><svg aria-hidden="true" viewBox="0 0 32 32" width="20" height="20"><path fill="currentColor" d="M19.1 17.4c-.3-.2-1.8-.9-2.1-1-.3-.1-.5-.2-.7.2-.2.3-.8 1-.9 1.2-.2.2-.3.2-.6.1-1.8-.9-3-1.7-4.2-3.8-.3-.5.3-.5.9-1.6.1-.2 0-.4 0-.6-.1-.2-.7-1.7-1-2.3-.3-.7-.6-.6-.8-.6h-.7c-.2 0-.6.1-.9.4-.3.3-1.2 1.2-1.2 2.9s1.2 3.3 1.4 3.6c.2.2 2.4 3.7 5.9 5.2.8.4 1.5.6 2 .7.8.3 1.6.2 2.2.1.7-.1 1.8-.7 2-1.4.3-.7.3-1.3.2-1.4-.1-.2-.3-.2-.6-.4M16.1 26h-.1c-1.8 0-3.5-.5-5-1.4l-.4-.2-3.7 1 1-3.6-.2-.4A10 10 0 1 1 16.1 26m8.5-18.6A12 12 0 0 0 5.7 21.9L4 28l6.3-1.6A12 12 0 1 0 24.6 7.4"/></svg><span>Hablá con Ema</span></a>
+ </div>`;
  loadPrice();
 }
 function proRequest(){
  setSeo("M Commerce PRO · Solicitud comercial","Contanos sobre tu negocio y diseñamos una tienda online a medida.",location.origin+"/simple/pro");
- app.innerHTML=`<div class="shell">${nav()}<main class="auth-wrap card"><div class="eyebrow">M Commerce PRO</div><h1>Una tienda diseñada para tu negocio.</h1><p class="muted">Dejanos tus datos. El equipo de M Commerce revisará la solicitud para preparar una propuesta personalizada.</p><form id="pro-form">${field("lead_name","Tu nombre","text","","required maxlength=\"120\"")}${field("lead_business","Nombre del negocio","text","","required maxlength=\"120\"")}${field("lead_email","Email","email","","required maxlength=\"254\"")}${field("lead_phone","WhatsApp","tel","","required maxlength=\"40\"")}<div class="field"><label for="lead_details">¿Qué necesitás?</label><textarea id="lead_details" maxlength="2000" placeholder="Rubro, funciones o integraciones que necesitás"></textarea></div><button class="btn brand" type="submit">Enviar solicitud</button></form></main></div>`;
+ app.innerHTML=`<div class="shell">${nav()}<main class="auth-wrap card"><div class="eyebrow">M Commerce PRO</div><h1>Una tienda diseñada para tu negocio.</h1><p class="muted">Dejanos tus datos. El equipo de M Commerce revisará la solicitud para preparar una propuesta personalizada.</p><a class="btn whatsapp-btn full" href="https://wa.me/5493329698591?text=Hola%20Ema%2C%20quiero%20asesoramiento%20sobre%20M%20Commerce%20PRO." target="_blank" rel="noopener noreferrer">Hablá con Ema por WhatsApp</a><form id="pro-form">${field("lead_name","Tu nombre","text","","required maxlength=\"120\"")}${field("lead_business","Nombre del negocio","text","","required maxlength=\"120\"")}${field("lead_email","Email","email","","required maxlength=\"254\"")}${field("lead_phone","WhatsApp","tel","","required maxlength=\"40\"")}<div class="field"><label for="lead_details">¿Qué necesitás?</label><textarea id="lead_details" maxlength="2000" placeholder="Rubro, funciones o integraciones que necesitás"></textarea></div><button class="btn brand" type="submit">Enviar solicitud</button></form></main></div>`;
  document.getElementById("pro-form").onsubmit=async ev=>{ev.preventDefault();try{setBusy(ev.submitter,true);const body={name:document.getElementById("lead_name").value,business_name:document.getElementById("lead_business").value,email:document.getElementById("lead_email").value,phone:document.getElementById("lead_phone").value,details:document.getElementById("lead_details").value},res=await fetch(SUPABASE_URL+"/functions/v1/simple-pro-lead",{method:"POST",headers:{"content-type":"application/json","apikey":SUPABASE_KEY},body:JSON.stringify(body)}),out=await res.json();if(!res.ok)throw new Error(out.message||out.error);ev.currentTarget.innerHTML='<h2>Solicitud recibida</h2><p>Gracias. El equipo de M Commerce ya puede continuar el contacto comercial.</p>';toast("Solicitud enviada.")}catch(e){fail(e)}finally{setBusy(ev.submitter,false)}};
 }
 async function loadPrice(){try{const data=await rpc("simple_public_plan");if(data)document.getElementById("simple-price").innerHTML=`${money(data.monthly_price,data.currency_code)} <small>/ mes</small>`}catch(e){console.warn(e)}}
@@ -124,8 +250,8 @@ async function productsPanel(panel,siteId){
 }
 async function productForm(siteId,p){
  const host=document.getElementById("product-form");const [{data:cats},{data:variants,error:variantsError}]=await Promise.all([sb.from("product_categories").select("id,name").eq("site_id",siteId).eq("active",true).order("sort_order"),p.id?sb.from("product_variants").select("name,price_delta,sort_order").eq("site_id",siteId).eq("product_id",p.id).order("sort_order"):Promise.resolve({data:[]})]);if(variantsError)throw variantsError;
- host.innerHTML=`<form class="card section" id="product-edit"><h2>${p.id?"Editar":"Nuevo"} producto</h2>${field("p_name","Nombre","text",p.name||"","required")}${field("p_price","Precio","number",p.price||"","required min=\"0\" step=\"0.01\"")}<div class="field"><label>Categoría</label><select id="p_category" required><option value="">Elegí una</option>${(cats||[]).map(c=>`<option value="${c.id}" data-name="${esc(c.name)}" ${c.name===p.category?"selected":""}>${esc(c.name)}</option>`).join("")}</select></div><div class="field"><label>Descripción</label><textarea id="p_description">${esc(p.description||"")}</textarea></div><div class="field"><label>Foto</label><input id="p_image" type="file" accept="image/jpeg,image/png,image/webp,image/avif"></div><div class="field"><label>Variantes opcionales</label><textarea id="p_variants" placeholder="Una por línea. Ej: Talle: M">${esc((variants||[]).map(v=>v.name+(Number(v.price_delta)?" | "+v.price_delta:"")).join("\n"))}</textarea><p class="hint">Podés usar talle, color, tamaño, sabor o medida. Para un adicional de precio: Grande | 1500</p></div><label><input id="p_active" type="checkbox" ${p.active!==false?"checked":""}> Disponible</label><button class="btn brand" type="submit">Guardar producto</button></form>`;
- document.getElementById("product-edit").onsubmit=async ev=>{ev.preventDefault();try{setBusy(ev.submitter,true);let image_url=p.image_url||"";const file=document.getElementById("p_image").files[0];if(file)image_url=await upload(siteId,file,"products");const sel=document.getElementById("p_category"),opt=sel.selectedOptions[0];await rpc("simple_upsert_product",{p_site_id:siteId,p_product:{id:p.id||null,name:document.getElementById("p_name").value,price:Number(document.getElementById("p_price").value),description:document.getElementById("p_description").value,category_id:sel.value,category:opt.dataset.name,image_url,active:document.getElementById("p_active").checked,variants:document.getElementById("p_variants").value.split(/\n/).map((line,index)=>{const [name,delta]=line.split("|");return {name:name.trim(),price_delta:Number((delta||"0").trim())||0,sort_order:index}}).filter(v=>v.name)}});toast("Producto guardado.");openPanel("products",siteId,{})}catch(e){fail(e)}finally{setBusy(ev.submitter,false)}};
+ host.innerHTML=`<form class="card section" id="product-edit"><div class="section-head"><h2>${p.id?"Editar":"Nuevo"} producto</h2>${p.image_url?`<img class="product-edit-thumb" src="${esc(p.image_url)}" alt="Foto actual de ${esc(p.name||"producto")}">`:""}</div>${field("p_name","Nombre","text",p.name||"","required")}${field("p_price","Precio","number",p.price||"","required min=\"0\" step=\"0.01\"")}<div class="field"><label>Categoría</label><select id="p_category" required><option value="">Elegí una</option>${(cats||[]).map(c=>`<option value="${c.id}" data-name="${esc(c.name)}" ${c.name===p.category?"selected":""}>${esc(c.name)}</option>`).join("")}</select></div><div class="field"><label>Descripción</label><textarea id="p_description">${esc(p.description||"")}</textarea></div><div class="field"><label>Foto del producto</label><input id="p_image" type="file" accept="image/jpeg,image/png,image/webp,image/avif"><p class="hint">Podés cambiarla cuando quieras. M Commerce optimiza las imágenes grandes.</p></div><div class="stock-editor"><label><input id="p_stock_tracking" type="checkbox" ${p.stock_tracking?"checked":""}> Controlar stock</label><div class="field"><label for="p_stock_quantity">Unidades disponibles</label><input id="p_stock_quantity" type="number" min="0" step="1" value="${p.stock_quantity??""}" ${p.stock_tracking?"":"disabled"}></div></div><div class="field"><label>Variantes opcionales</label><textarea id="p_variants" placeholder="Una por línea. Ej: Talle: M">${esc((variants||[]).map(v=>v.name+(Number(v.price_delta)?" | "+v.price_delta:"")).join("\n"))}</textarea><p class="hint">Podés usar talle, color, tamaño, sabor o medida. Para un adicional de precio: Grande | 1500</p></div><label><input id="p_active" type="checkbox" ${p.active!==false?"checked":""}> Disponible</label><button class="btn brand" type="submit">Guardar producto</button></form>`;document.getElementById("p_stock_tracking").onchange=e=>{document.getElementById("p_stock_quantity").disabled=!e.currentTarget.checked};
+ document.getElementById("product-edit").onsubmit=async ev=>{ev.preventDefault();try{setBusy(ev.submitter,true);let image_url=p.image_url||"";const file=document.getElementById("p_image").files[0];if(file)image_url=await upload(siteId,file,"products");const sel=document.getElementById("p_category"),opt=sel.selectedOptions[0];await rpc("simple_upsert_product",{p_site_id:siteId,p_product:{id:p.id||null,name:document.getElementById("p_name").value,price:Number(document.getElementById("p_price").value),description:document.getElementById("p_description").value,category_id:sel.value,category:opt.dataset.name,image_url,active:document.getElementById("p_active").checked,stock_tracking:document.getElementById("p_stock_tracking").checked,stock_quantity:document.getElementById("p_stock_tracking").checked?Number(document.getElementById("p_stock_quantity").value||0):null,variants:document.getElementById("p_variants").value.split(/\n/).map((line,index)=>{const [name,delta]=line.split("|");return {name:name.trim(),price_delta:Number((delta||"0").trim())||0,sort_order:index}}).filter(v=>v.name)}});toast("Producto guardado.");openPanel("products",siteId,{})}catch(e){fail(e)}finally{setBusy(ev.submitter,false)}};
 }
 async function categoriesPanel(panel,siteId){
  const {data,error}=await sb.from("product_categories").select("*").eq("site_id",siteId).order("sort_order");if(error)throw error;
@@ -140,10 +266,10 @@ async function startSubscription(siteId,button){try{setBusy(button,true);const o
 function subscriptionGate(site,sub={}){app.innerHTML=`<div class="app-shell"><header class="app-head"><div class="inner"><span class="brand">M COMMERCE <small>SIMPLE</small></span><button id="logout" class="mini">Salir</button></div></header><main class="app-main"><section class="card wizard"><div class="eyebrow">Suscripción</div><h1>Activá M Commerce Simple</h1><p class="muted">La suscripción de M Commerce es independiente de los pagos que recibirás de tus clientes.</p><div class="price">${sub?.amount?money(sub.amount,sub.currency_code||"ARS"):"Plan mensual"} <small>${sub?.amount?"/ mes":""}</small></div><button id="gate-subscribe" class="btn brand">Continuar con Mercado Pago</button><button id="gate-refresh" class="btn secondary" type="button">Ya pagué · verificar</button></section></main></div>`;document.getElementById("logout").onclick=logout;document.getElementById("gate-subscribe").onclick=ev=>startSubscription(site.id,ev.currentTarget);document.getElementById("gate-refresh").onclick=async ev=>{try{setBusy(ev.currentTarget,true);await billingCall("subscription_refresh",site.id);await dashboard(site)}catch(e){fail(e)}finally{setBusy(ev.currentTarget,false)}}}
 function planPanel(panel,siteId,sub){panel.innerHTML=`<div class="card"><h2>Mi plan</h2><div class="price">${money(sub?.amount||0,sub?.currency_code||"ARS")} <small>/ mes</small></div><p>Estado: <strong>${esc(sub?.status||"pending")}</strong></p><button id="subscribe" class="btn brand">Administrar suscripción</button></div>`;document.getElementById("subscribe").onclick=ev=>startSubscription(siteId,ev.currentTarget)}
 async function wizard(siteId,step=1,dash=null){
- dash=dash||await rpc("simple_dashboard",{p_site_id:siteId});const st=dash.settings||{},state={business_name:st.business_name||"",business_category:st.business_category||"",whatsapp_number:st.whatsapp_number||"",address:st.address||"",schedule:st.schedule||"",logo_url:st.logo_url||"",fulfillment_config:st.fulfillment_config||{pickup_enabled:true,shipping_enabled:false},payment_methods:st.payment_methods||{cash:true,transfer:true,mercadopago:false}};let current=Math.max(1,Math.min(10,step));
+ dash=dash||await rpc("simple_dashboard",{p_site_id:siteId});const st=dash.settings||{},state={business_name:st.business_name||"",business_category:st.business_category||"",whatsapp_number:st.whatsapp_number||"",address:st.address||"",schedule:st.schedule||"",logo_url:st.logo_url||"",cover_url:st.cover_url||"",fulfillment_config:st.fulfillment_config||{pickup_enabled:true,shipping_enabled:false},payment_methods:st.payment_methods||{cash:true,transfer:true,mercadopago:false}};let current=Math.max(1,Math.min(10,step));
  const render=()=>{const content=[
   ["Nombre del comercio",field("w_name","¿Cómo se llama tu comercio?","text",state.business_name,"required")],
-  ["Logo o imagen",`<div class="field"><label for="w_logo">Elegí una imagen</label><input id="w_logo" type="file" accept="image/jpeg,image/png,image/webp,image/avif"></div>`],
+  ["Logo y portada",`<div class="upload-grid"><div class="field"><label for="w_logo">Logo del comercio</label>${state.logo_url?`<img class="upload-preview logo-preview" src="${esc(state.logo_url)}" alt="Logo actual">`:""}<input id="w_logo" type="file" accept="image/jpeg,image/png,image/webp,image/avif"><span class="hint">JPG, PNG, WebP o AVIF · máx. 8 MB.</span></div><div class="field"><label for="w_cover">Imagen de portada</label>${state.cover_url?`<img class="upload-preview cover-preview" src="${esc(state.cover_url)}" alt="Portada actual">`:""}<input id="w_cover" type="file" accept="image/jpeg,image/png,image/webp,image/avif"><span class="hint">Se muestra arriba de tu tienda.</span></div></div>`],
   ["Rubro",field("w_category","¿A qué se dedica?","text",state.business_category,"required placeholder=\"Ej: Indumentaria, comidas, ferretería\"")],
   ["WhatsApp",field("w_phone","Número con código de área","tel",state.whatsapp_number,"required")],
   ["Dirección y localidad",field("w_address","Dirección","text",state.address,"required")],
@@ -158,7 +284,7 @@ async function wizard(siteId,step=1,dash=null){
  document.querySelectorAll(".fulfillment,.payment").forEach(b=>b.onclick=()=>{const target=b.classList.contains("payment")?state.payment_methods:state.fulfillment_config;target[b.dataset.k]=!target[b.dataset.k];b.classList.toggle("selected",target[b.dataset.k])});
  document.getElementById("wizard").onsubmit=async ev=>{ev.preventDefault();try{setBusy(ev.submitter,true);
   if(current===1)state.business_name=document.getElementById("w_name").value.trim();
-  if(current===2){const f=document.getElementById("w_logo").files[0];if(f)state.logo_url=await upload(siteId,f,"brand")}
+  if(current===2){const logo=document.getElementById("w_logo").files[0],cover=document.getElementById("w_cover").files[0];if(logo)state.logo_url=await upload(siteId,logo,"brand");if(cover)state.cover_url=await upload(siteId,cover,"cover")}
   if(current===3)state.business_category=document.getElementById("w_category").value.trim();
   if(current===4)state.whatsapp_number=document.getElementById("w_phone").value.trim();
   if(current===5)state.address=document.getElementById("w_address").value.trim();
