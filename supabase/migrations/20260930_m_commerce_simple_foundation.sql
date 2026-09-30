@@ -456,7 +456,7 @@ returns jsonb
 language plpgsql
 security definer
 set search_path = ''
-as $
+as $$
 declare v_result jsonb;
 begin
   if (select auth.uid()) is null then raise exception 'AUTH_REQUIRED'; end if;
@@ -473,7 +473,7 @@ begin
   limit 1;
   return v_result;
 end;
-$;
+$$;
 
 revoke all on function public.simple_my_store() from public;
 grant execute on function public.simple_my_store() to authenticated;
@@ -483,7 +483,7 @@ returns jsonb
 language plpgsql
 security definer
 set search_path = ''
-as $
+as $$
 declare v_result jsonb;
 begin
   if not public.platform_is_master_admin() then raise exception 'ADMIN_REQUIRED'; end if;
@@ -500,7 +500,7 @@ begin
   where s.product_tier='simple';
   return v_result;
 end;
-$;
+$$;
 
 revoke all on function public.simple_master_stores() from public;
 grant execute on function public.simple_master_stores() to authenticated;
@@ -513,7 +513,7 @@ returns jsonb
 language plpgsql
 security definer
 set search_path = ''
-as $
+as $$
 declare v_site public.sites;
 begin
   if not public.platform_is_master_admin() then raise exception 'ADMIN_REQUIRED'; end if;
@@ -534,7 +534,7 @@ begin
     'is_suspended',v_site.is_suspended
   );
 end;
-$;
+$$;
 
 revoke all on function public.simple_admin_set_store_state(uuid,text) from public;
 grant execute on function public.simple_admin_set_store_state(uuid,text) to authenticated;
