@@ -70,17 +70,13 @@ Deno.serve(async(req:Request)=>{
     const {data:order,error:createError}=await admin.rpc("create_checkout_order_v117",{
       p_customer_name:customerName,p_customer_phone:phone,p_customer_email:"",
       p_delivery_address:address||null,p_delivery_method:delivery,p_notes:cut(body?.notes,1000),
-      p_payment_method:"cash",p_site_id:siteId,p_items:items,p_checkout_attempt_id:attempt,
+      p_payment_method:method,p_site_id:siteId,p_items:items,p_checkout_attempt_id:attempt,
       p_delivery_latitude:null,p_delivery_longitude:null,p_delivery_place_id:null,
       p_delivery_address_formatted:null,p_delivery_address_source:delivery==="delivery"?"manual":null,
       p_delivery_unit:null,p_delivery_instructions:null,p_promotion_code:null,
       p_marketing_opt_in:false,p_redeem_points:false,p_cart_token:null,p_order_source:"simple"
     });
     if(createError)throw createError;
-    if(method==="transfer"){
-      const {error:updateError}=await admin.from("orders").update({payment_method:"transfer",payment_status:"unpaid",payment_provider:null}).eq("id",order.id).eq("site_id",siteId);
-      if(updateError)throw updateError;
-    }
     const {data:orderItems,error:itemError}=await admin.from("order_items").select("product_name,variant_name,quantity,line_total").eq("order_id",order.id).eq("site_id",siteId).order("id");
     if(itemError)throw itemError;
     const businessPhone=String(settings.whatsapp_number||"").replace(/\D/g,"");
