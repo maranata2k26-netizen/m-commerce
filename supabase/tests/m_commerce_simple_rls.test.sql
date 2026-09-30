@@ -36,7 +36,7 @@ select is(
 );
 select lives_ok(
   format(
-    $ select public.simple_upsert_category(%L::uuid,'{"name":"Categoría A"}'::jsonb) $,
+    $$ select public.simple_upsert_category(%L::uuid,'{"name":"Categoría A"}'::jsonb) $$,
     (select id from test_a)
   ),
   'owner A can create a category in A'
@@ -44,11 +44,11 @@ select lives_ok(
 
 select lives_ok(
   format(
-    $ select public.simple_upsert_product(%L::uuid,jsonb_build_object(
+    $$ select public.simple_upsert_product(%L::uuid,jsonb_build_object(
       'name','Producto A','price',1000,'active',true,
       'category_id',(select id::text from public.product_categories where site_id=%L::uuid limit 1),
       'variants',jsonb_build_array(jsonb_build_object('name','Talle: M'))
-    )) $,
+    )) $$,
     (select id from test_a),(select id from test_a)
   ),
   'owner A can create a product and variant in A'
@@ -100,7 +100,7 @@ select is(
   'owner B cannot read A orders'
 );
 select throws_ok(
-  format($ select public.platform_update_order_status(%L::uuid,'preparing') $,(select id from test_order_a)),
+  format($$ select public.platform_update_order_status(%L::uuid,'preparing') $$,(select id from test_order_a)),
   'SITE_ACCESS_DENIED',
   'owner B cannot change A order status'
 );
