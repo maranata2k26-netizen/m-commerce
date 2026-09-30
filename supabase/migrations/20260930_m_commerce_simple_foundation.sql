@@ -416,6 +416,7 @@ declare
   v_category_name text;
   v_product jsonb;
   v_result public.products;
+  v_variant jsonb;
 begin
   if not public.platform_is_site_member(p_site_id) then raise exception 'SITE_ACCESS_DENIED'; end if;
   if not exists (select 1 from public.sites where id=p_site_id and product_tier='simple') then
@@ -442,6 +443,32 @@ begin
   returning * into v_result;
 
   if v_result.id is null then raise exception 'PRODUCT_NOT_FOUND'; end if;
+
+  if p_product ? 'variants' then
+    if jsonb_typeof(p_product->'variants') <> 'array'
+       or jsonb_array_length(p_product->'variants') > 50 then
+      raise exception 'INVALID_VARIANTS';
+    end if;
+    delete from public.product_variants
+    where site_id=p_site_id and product_id=v_result.id;
+    for v_variant in select value from jsonb_array_elements(p_product->'variants')
+    loop
+      if char_length(trim(coalesce(v_variant->>'name',''))) not between 1 and 100 then
+        raise exception 'INVALID_VARIANT_NAME';
+      end if;
+      insert into public.product_variants(
+        site_id,product_id,name,price_delta,active,available,sort_order,
+        stock_tracking,stock_quantity,attributes
+      ) values (
+        p_site_id,v_result.id,trim(v_variant->>'name'),
+        coalesce((v_variant->>'price_delta')::numeric,0),true,true,
+        coalesce((v_variant->>'sort_order')::integer,0),
+        coalesce((v_variant->>'stock_tracking')::boolean,false),
+        nullif(v_variant->>'stock_quantity','')::integer,
+        coalesce(v_variant->'attributes','{}'::jsonb)
+      );
+    end loop;
+  end if;
 
   update public.sites set last_activity_at=now(),updated_at=now() where id=p_site_id;
   return to_jsonb(v_result);
