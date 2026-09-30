@@ -16,7 +16,7 @@ const field=(name,label,type="text",value="",extra="")=>`<div class="field"><lab
 const route=decodeURIComponent(location.pathname);
 function nav(){return `<nav class="nav site-nav">
   <a class="brand brand-lockup" href="/simple" aria-label="M Commerce - inicio">
-    <img src="/assets/m-commerce-brand-original-192.png" alt="M Commerce">
+    <img src="/assets/m-commerce-mark.svg" alt="M Commerce">
     <span><strong>M COMMERCE</strong><small>TU TIENDA ONLINE</small></span>
   </a>
   <div class="nav-links" aria-label="Navegación principal">
@@ -46,7 +46,7 @@ function landing(){
      <div class="trust-line"><span>✓ Alta online</span><span>✓ Catálogo profesional</span><span>✓ Pedidos y cobros</span><span>✓ Gestión desde celular</span></div>
    </div>
    <div class="hero-brand-card" aria-label="M Commerce">
-     <img src="/assets/m-commerce-brand-original-512.png" alt="Logo M Commerce">
+     <img src="/assets/m-commerce-mark.svg" alt="Logo M Commerce">
      <strong>M COMMERCE</strong>
      <span>TU TIENDA ONLINE</span>
      <small>Simple para empezar. PRO para crecer.</small>
@@ -137,13 +137,13 @@ function landing(){
  </section>
 
  <section class="final-cta">
-   <img src="/assets/m-commerce-brand-original-192.png" alt="" aria-hidden="true">
+   <img src="/assets/m-commerce-mark.svg" alt="" aria-hidden="true">
    <div><div class="eyebrow">M Commerce</div><h2>Tu negocio puede empezar a vender online hoy.</h2><p>Creá tu tienda Simple o hablá con Ema si necesitás una solución PRO.</p></div>
    <div class="final-actions"><a class="btn brand" href="/simple/app?mode=register">Crear mi tienda</a><a class="btn whatsapp-btn" href="https://wa.me/5493329698591?text=Hola%20Ema%2C%20vi%20M%20Commerce%20y%20quiero%20asesoramiento." target="_blank" rel="noopener noreferrer"><svg aria-hidden="true" viewBox="0 0 32 32" width="20" height="20"><path fill="currentColor" d="M19.1 17.4c-.3-.2-1.8-.9-2.1-1-.3-.1-.5-.2-.7.2-.2.3-.8 1-.9 1.2-.2.2-.3.2-.6.1-1.8-.9-3-1.7-4.2-3.8-.3-.5.3-.5.9-1.6.1-.2 0-.4 0-.6-.1-.2-.7-1.7-1-2.3-.3-.7-.6-.6-.8-.6h-.7c-.2 0-.6.1-.9.4-.3.3-1.2 1.2-1.2 2.9s1.2 3.3 1.4 3.6c.2.2 2.4 3.7 5.9 5.2.8.4 1.5.6 2 .7.8.3 1.6.2 2.2.1.7-.1 1.8-.7 2-1.4.3-.7.3-1.3.2-1.4-.1-.2-.3-.2-.6-.4M16.1 26h-.1c-1.8 0-3.5-.5-5-1.4l-.4-.2-3.7 1 1-3.6-.2-.4A10 10 0 1 1 16.1 26m8.5-18.6A12 12 0 0 0 5.7 21.9L4 28l6.3-1.6A12 12 0 1 0 24.6 7.4"/></svg><span>Hablá con Ema</span></a></div>
  </section>
  </main>
  <footer class="site-footer">
-   <div class="footer-brand"><img src="/assets/m-commerce-brand-original-192.png" alt="M Commerce"><div><strong>M COMMERCE</strong><span>Tu tienda online</span></div></div>
+   <div class="footer-brand"><img src="/assets/m-commerce-mark.svg" alt="M Commerce"><div><strong>M COMMERCE</strong><span>Tu tienda online</span></div></div>
    <div class="footer-links"><a href="#planes">Planes</a><a href="#como-funciona">Cómo funciona</a><a href="#comparacion">Simple vs PRO</a><a href="https://wa.me/5493329698591?text=Hola%20Ema%2C%20vi%20M%20Commerce%20y%20quiero%20asesoramiento." target="_blank" rel="noopener noreferrer">WhatsApp</a><a href="https://www.instagram.com/mcommercee/" target="_blank" rel="noopener noreferrer">Instagram</a></div>
    <small>© M Commerce · Plataforma de tiendas online.</small>
  </footer>
