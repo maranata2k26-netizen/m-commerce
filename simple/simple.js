@@ -36,10 +36,12 @@ function authView(mode){
 function setBusy(el,on){if(!el)return;el.disabled=on;el.dataset.label??=el.textContent;el.textContent=on?"Procesando…":el.dataset.label}
 async function appRoute(){
  const session=await getSession();if(!session)return authView(new URLSearchParams(location.search).get("mode"));
- const sites=await rpc("platform_my_sites").catch(()=>[]);
- const list=Array.isArray(sites)?sites:(sites?.sites||[]);
- const site=list.find(s=>s.product_tier==="simple");
+ let site=await rpc("simple_my_store").catch(()=>null);
  if(!site)return createStoreView(session.user);
+ if(new URLSearchParams(location.search).get("billing_return")==="1"){
+  try{await billingCall("subscription_refresh",site.id)}catch(e){console.warn("subscription_refresh",e)}
+  site=await rpc("simple_my_store");
+ }
  return dashboard(site);
 }
 function createStoreView(user){
@@ -48,13 +50,15 @@ function createStoreView(user){
  const name=document.getElementById("store_name"),slug=document.getElementById("store_slug");
  name.oninput=()=>{if(!slug.dataset.touched){slug.value=slugify(name.value);document.getElementById("slug-preview").textContent=slug.value||"mitienda"}};
  slug.oninput=()=>{slug.dataset.touched="1";slug.value=slugify(slug.value);document.getElementById("slug-preview").textContent=slug.value||"mitienda"};
- document.getElementById("create-store").onsubmit=async ev=>{ev.preventDefault();try{setBusy(ev.submitter,true);const data=await rpc("simple_create_store",{p_name:name.value,p_slug:slug.value});await wizard(data.id,1)}catch(e){fail(e)}finally{setBusy(ev.submitter,false)}};
+ document.getElementById("create-store").onsubmit=async ev=>{ev.preventDefault();try{setBusy(ev.submitter,true);const data=await rpc("simple_create_store",{p_name:name.value,p_slug:slug.value});await subscriptionGate(data)}catch(e){fail(e)}finally{setBusy(ev.submitter,false)}};
 }
 const slugify=v=>String(v||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
 async function dashboard(site){
  let data;try{data=await rpc("simple_dashboard",{p_site_id:site.id})}catch(e){return fail(e)}
+ const sub=data.subscription||{};
+ if(!["trial","active"].includes(String(sub.status||data.site.subscription_status||"")))return subscriptionGate(data.site,sub);
  if(!data.site.simple_onboarding_completed_at&&Number(data.settings.simple_onboarding_step||1)<=10)return wizard(site.id,Number(data.settings.simple_onboarding_step||1),data);
- const c=data.counts||{},s=data.site,sub=data.subscription||{};
+ const c=data.counts||{},s=data.site;
  app.innerHTML=`<div class="app-shell"><header class="app-head"><div class="inner"><span class="brand">M COMMERCE <small>SIMPLE</small></span><button id="logout" class="mini">Salir</button></div></header><main class="app-main">
  <section class="welcome"><div><div class="eyebrow">Mi tienda</div><h1>${esc(s.name)}</h1><div class="muted">m-commerce-ar.vercel.app/tienda/${esc(s.slug)}</div></div><span class="status ${sub.status==="active"?"active":""}">${esc(sub.status||"pending")}</span></section>
  <section class="stats"><div class="stat"><div class="count">${c.new_orders||0}</div><small>Pedidos nuevos</small></div><div class="stat"><div class="count">${c.products||0}</div><small>Productos</small></div><div class="stat"><div class="count">${c.categories||0}</div><small>Categorías</small></div><div class="stat"><div class="count">${c.orders||0}</div><small>Pedidos totales</small></div></section>
@@ -91,7 +95,7 @@ async function ordersPanel(panel,siteId){
  panel.querySelectorAll(".order-status").forEach(x=>x.onchange=async()=>{try{await rpc("platform_update_order_status",{p_order_id:x.dataset.id,p_status:x.value});toast("Estado actualizado.")}catch(e){fail(e)}});
 }
 async function productsPanel(panel,siteId){
- const {data,error}=await sb.from("products").select("id,name,price,category,active,stock_tracking,stock_quantity,image_url").eq("site_id",siteId).order("sort_order");if(error)throw error;
+ const {data,error}=await sb.from("products").select("id,name,description,price,category,category_id,active,stock_tracking,stock_quantity,image_url").eq("site_id",siteId).order("sort_order");if(error)throw error;
  panel.innerHTML=`<div class="section-head"><h2>Productos</h2><button id="new-product" class="btn">Nuevo producto</button></div><div class="list">${(data||[]).map(p=>`<article class="row"><div class="row-main"><div class="row-title">${esc(p.name)}</div><div class="row-sub">${esc(p.category)} · ${money(p.price)}${p.stock_tracking?" · Stock "+p.stock_quantity:""}</div></div><button class="mini edit-product" data-json="${esc(JSON.stringify(p))}">Editar</button></article>`).join("")||'<div class="card empty">Cargá tu primer producto.</div>'}</div><div id="product-form"></div>`;
  document.getElementById("new-product").onclick=()=>productForm(siteId,{});
  panel.querySelectorAll(".edit-product").forEach(b=>b.onclick=()=>productForm(siteId,JSON.parse(b.dataset.json)));
@@ -109,7 +113,10 @@ async function categoriesPanel(panel,siteId){
 }
 function categoryForm(siteId,c){const host=document.getElementById("category-form");host.innerHTML=`<form id="category-edit" class="card section"><h2>${c.id?"Editar":"Nueva"} categoría</h2>${field("c_name","Nombre","text",c.name||"","required maxlength=\"80\"")}<label><input id="c_active" type="checkbox" ${c.active!==false?"checked":""}> Visible</label><button class="btn brand" type="submit">Guardar</button></form>`;document.getElementById("category-edit").onsubmit=async ev=>{ev.preventDefault();try{setBusy(ev.submitter,true);await rpc("simple_upsert_category",{p_site_id:siteId,p_category:{id:c.id||null,name:document.getElementById("c_name").value,active:document.getElementById("c_active").checked}});toast("Categoría guardada.");openPanel("categories",siteId,{})}catch(e){fail(e)}finally{setBusy(ev.submitter,false)}}}
 function sharePanel(panel,slug){const url=location.origin+"/tienda/"+slug;panel.innerHTML=`<div class="card"><h2>Compartir mi tienda</h2><p class="muted">${esc(url)}</p><div class="hero-actions"><button id="copy-url" class="btn">Copiar enlace</button><a class="btn brand" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent("Conocé mi tienda: "+url)}">Compartir por WhatsApp</a></div><div id="qr" class="section"></div></div>`;document.getElementById("copy-url").onclick=async()=>{await navigator.clipboard.writeText(url);toast("Enlace copiado.")};if("share"in navigator){const b=document.createElement("button");b.className="btn secondary";b.textContent="Compartir…";b.onclick=()=>navigator.share({title:"Mi tienda",url});panel.querySelector(".hero-actions").appendChild(b)}document.getElementById("qr").innerHTML=`<img width="220" height="220" alt="QR de la tienda" src="https://api.qrserver.com/v1/create-qr-code/?size=440x440&data=${encodeURIComponent(url)}">`}
-function planPanel(panel,siteId,sub){panel.innerHTML=`<div class="card"><h2>Mi plan</h2><div class="price">${money(sub?.amount||0,sub?.currency_code||"ARS")} <small>/ mes</small></div><p>Estado: <strong>${esc(sub?.status||"pending")}</strong></p><button id="subscribe" class="btn brand">Activar suscripción</button></div>`;document.getElementById("subscribe").onclick=async ev=>{try{setBusy(ev.currentTarget,true);const session=await getSession();const res=await fetch(SUPABASE_URL+"/functions/v1/j3-billing",{method:"POST",headers:{"content-type":"application/json","apikey":SUPABASE_KEY,"authorization":"Bearer "+session.access_token},body:JSON.stringify({action:"subscription_create",site_id:siteId})});const out=await res.json();if(!res.ok)throw new Error(out.message||out.error||"No se pudo iniciar la suscripción.");if(out.init_point)location.href=out.init_point;else toast("Suscripción iniciada.")}catch(e){fail(e)}finally{setBusy(ev.currentTarget,false)}}}
+async function billingCall(action,siteId){const session=await getSession();const res=await fetch(SUPABASE_URL+"/functions/v1/j3-billing",{method:"POST",headers:{"content-type":"application/json","apikey":SUPABASE_KEY,"authorization":"Bearer "+session.access_token},body:JSON.stringify({action,site_id:siteId,return_path:"/simple/app?billing_return=1&site="+encodeURIComponent(siteId)})});const out=await res.json();if(!res.ok)throw new Error(out.message||out.error||"No se pudo procesar la suscripción.");return out}
+async function startSubscription(siteId,button){try{setBusy(button,true);const out=await billingCall("subscription_create",siteId),url=out.checkout_url||out.init_point;if(url)location.href=url;else toast("Suscripción iniciada.")}catch(e){fail(e)}finally{setBusy(button,false)}}
+function subscriptionGate(site,sub={}){app.innerHTML=`<div class="app-shell"><header class="app-head"><div class="inner"><span class="brand">M COMMERCE <small>SIMPLE</small></span><button id="logout" class="mini">Salir</button></div></header><main class="app-main"><section class="card wizard"><div class="eyebrow">Suscripción</div><h1>Activá M Commerce Simple</h1><p class="muted">La suscripción de M Commerce es independiente de los pagos que recibirás de tus clientes.</p><div class="price">${money(sub?.amount||25000,sub?.currency_code||"ARS")} <small>/ mes</small></div><button id="gate-subscribe" class="btn brand">Continuar con Mercado Pago</button><button id="gate-refresh" class="btn secondary" type="button">Ya pagué · verificar</button></section></main></div>`;document.getElementById("logout").onclick=logout;document.getElementById("gate-subscribe").onclick=ev=>startSubscription(site.id,ev.currentTarget);document.getElementById("gate-refresh").onclick=async ev=>{try{setBusy(ev.currentTarget,true);await billingCall("subscription_refresh",site.id);await dashboard(site)}catch(e){fail(e)}finally{setBusy(ev.currentTarget,false)}}}
+function planPanel(panel,siteId,sub){panel.innerHTML=`<div class="card"><h2>Mi plan</h2><div class="price">${money(sub?.amount||0,sub?.currency_code||"ARS")} <small>/ mes</small></div><p>Estado: <strong>${esc(sub?.status||"pending")}</strong></p><button id="subscribe" class="btn brand">Administrar suscripción</button></div>`;document.getElementById("subscribe").onclick=ev=>startSubscription(siteId,ev.currentTarget)}
 async function wizard(siteId,step=1,dash=null){
  dash=dash||await rpc("simple_dashboard",{p_site_id:siteId});const st=dash.settings||{},state={business_name:st.business_name||"",business_category:st.business_category||"",whatsapp_number:st.whatsapp_number||"",address:st.address||"",schedule:st.schedule||"",logo_url:st.logo_url||"",fulfillment_config:st.fulfillment_config||{pickup_enabled:true,shipping_enabled:false},payment_methods:st.payment_methods||{cash:true,transfer:true,mercadopago:false}};let current=Math.max(1,Math.min(10,step));
  const render=()=>{const content=[
