@@ -14,15 +14,141 @@ const setSeo=(title,description,url=location.href,image="")=>{document.title=tit
 const getSession=async()=>{const {data,error}=await sb.auth.getSession();if(error)throw error;return data.session};
 const field=(name,label,type="text",value="",extra="")=>`<div class="field"><label for="${name}">${label}</label><input id="${name}" name="${name}" type="${type}" value="${esc(value)}" ${extra}></div>`;
 const route=decodeURIComponent(location.pathname);
-function nav(){return `<nav class="nav"><a class="brand" href="/simple">M COMMERCE<small>TU TIENDA ONLINE</small></a><div class="nav-actions"><a class="btn secondary" href="/simple/app">Ingresar</a><a class="btn brand" href="/simple/app?mode=register">Crear mi tienda</a></div></nav>`}
+function nav(){return `<nav class="nav site-nav">
+  <a class="brand brand-lockup" href="/simple" aria-label="M Commerce - inicio">
+    <img src="/assets/m-commerce-brand-original-192.png" alt="M Commerce">
+    <span><strong>M COMMERCE</strong><small>TU TIENDA ONLINE</small></span>
+  </a>
+  <div class="nav-links" aria-label="Navegación principal">
+    <a href="/simple#como-funciona">Cómo funciona</a>
+    <a href="/simple#planes">Planes</a>
+    <a href="/simple#comparacion">Diferencias</a>
+    <a href="https://wa.me/5493329698591?text=Hola%20Ema%2C%20vi%20M%20Commerce%20y%20quiero%20asesoramiento." target="_blank" rel="noopener noreferrer">Contacto</a>
+  </div>
+  <div class="nav-actions">
+    <a class="btn secondary" href="/simple/app">Ingresar</a>
+    <a class="btn brand" href="/simple/app?mode=register">Crear mi tienda</a>
+  </div>
+</nav>`}
 function landing(){
- document.title="M Commerce · Tu tienda online";
- app.innerHTML=`<div class="shell">${nav()}<main id="app-main">
- <section class="hero"><div class="eyebrow">M Commerce</div><h1>Tu tienda online.</h1><p>Mostrá tus productos, compartí tu enlace y recibí pedidos con una experiencia profesional desde cualquier celular.</p><div class="hero-actions"><a class="btn brand" href="/simple/app?mode=register">Crear mi tienda</a><a class="btn secondary" href="#planes">Ver opciones</a></div></section>
- <section id="planes" class="plans">
-  <article class="plan simple"><div class="eyebrow">Autogestionable</div><h2>M Commerce Simple</h2><p>Una solución clara y económica para empezar a vender online sin conocimientos técnicos.</p><div class="price" id="simple-price">Plan mensual</div><ul class="ticks"><li>Catálogo y productos</li><li>Carrito y pedidos</li><li>WhatsApp integrado</li><li>Retiro y delivery</li><li>Administración desde el celular</li></ul><a class="btn brand" href="/simple/app?mode=register">Crear mi tienda</a></article>
-  <article class="plan"><div class="eyebrow">Personalizado</div><h2>M Commerce PRO</h2><p>Una tienda diseñada para tu negocio, con identidad visual, funciones avanzadas e implementación personalizada.</p><ul class="ticks"><li>Diseño propio</li><li>Integraciones avanzadas</li><li>Funciones a medida</li><li>Acompañamiento de M Commerce</li></ul><a class="btn" href="/simple/pro">Quiero mi tienda PRO</a></article>
- </section></main></div>`;
+ setSeo("M Commerce | Tu tienda online","Creá tu tienda online, cargá productos, recibí pedidos y elegí entre M Commerce Simple o una solución PRO personalizada.",location.origin+"/simple");
+ app.innerHTML=`<div class="shell landing-shell">${nav()}<main id="app-main">
+ <section class="hero hero-pro">
+   <div class="hero-copy">
+     <div class="eyebrow">M Commerce · Plataforma de ventas online</div>
+     <h1>Tu tienda online, lista para vender.</h1>
+     <p>Mostrá tus productos, compartí tu enlace y recibí pedidos con una experiencia profesional desde cualquier celular.</p>
+     <div class="hero-actions">
+       <a class="btn brand" href="/simple/app?mode=register">Crear mi tienda</a>
+       <a class="btn secondary hero-secondary" href="#planes">Ver planes</a>
+       <a class="btn whatsapp-btn" href="https://wa.me/5493329698591?text=Hola%20Ema%2C%20vi%20M%20Commerce%20y%20quiero%20asesoramiento." target="_blank" rel="noopener noreferrer"><svg aria-hidden="true" viewBox="0 0 32 32" width="20" height="20"><path fill="currentColor" d="M19.1 17.4c-.3-.2-1.8-.9-2.1-1-.3-.1-.5-.2-.7.2-.2.3-.8 1-.9 1.2-.2.2-.3.2-.6.1-1.8-.9-3-1.7-4.2-3.8-.3-.5.3-.5.9-1.6.1-.2 0-.4 0-.6-.1-.2-.7-1.7-1-2.3-.3-.7-.6-.6-.8-.6h-.7c-.2 0-.6.1-.9.4-.3.3-1.2 1.2-1.2 2.9s1.2 3.3 1.4 3.6c.2.2 2.4 3.7 5.9 5.2.8.4 1.5.6 2 .7.8.3 1.6.2 2.2.1.7-.1 1.8-.7 2-1.4.3-.7.3-1.3.2-1.4-.1-.2-.3-.2-.6-.4M16.1 26h-.1c-1.8 0-3.5-.5-5-1.4l-.4-.2-3.7 1 1-3.6-.2-.4A10 10 0 1 1 16.1 26m8.5-18.6A12 12 0 0 0 5.7 21.9L4 28l6.3-1.6A12 12 0 1 0 24.6 7.4"/></svg><span>Hablá con Ema</span></a>
+     </div>
+     <div class="trust-line"><span>✓ Alta online</span><span>✓ Catálogo profesional</span><span>✓ Pedidos y cobros</span><span>✓ Gestión desde celular</span></div>
+   </div>
+   <div class="hero-brand-card" aria-label="M Commerce">
+     <img src="/assets/m-commerce-brand-original-512.png" alt="Logo M Commerce">
+     <strong>M COMMERCE</strong>
+     <span>TU TIENDA ONLINE</span>
+     <small>Simple para empezar. PRO para crecer.</small>
+   </div>
+ </section>
+
+ <section class="company-strip" aria-label="Beneficios de M Commerce">
+   <div><b>Una sola plataforma</b><span>Catálogo, carrito, pedidos y gestión.</span></div>
+   <div><b>Lista para compartir</b><span>Tu negocio con un enlace propio.</span></div>
+   <div><b>Hecha para vender</b><span>Experiencia clara en celular y PC.</span></div>
+   <div><b>Escalable</b><span>Empezá Simple y pasá a PRO cuando lo necesites.</span></div>
+ </section>
+
+ <section id="como-funciona" class="landing-section">
+   <div class="section-intro"><div class="eyebrow">Así de simple</div><h2>De cero a tienda online en pocos pasos.</h2><p>No necesitás saber programar. M Commerce te guía y después administrás tu catálogo desde el mismo panel.</p></div>
+   <div class="steps-grid">
+     <article><span>01</span><h3>Creás tu cuenta</h3><p>Registrás tu comercio y elegís tu enlace.</p></article>
+     <article><span>02</span><h3>Cargás tu negocio</h3><p>Logo, datos, categorías, productos, fotos y precios.</p></article>
+     <article><span>03</span><h3>Conectás tus cobros</h3><p>Podés vincular el Mercado Pago propio de tu comercio.</p></article>
+     <article><span>04</span><h3>Compartís y vendés</h3><p>Mandás tu link y recibís pedidos desde tu tienda.</p></article>
+   </div>
+ </section>
+
+ <section class="catalog-showcase">
+   <div class="catalog-copy">
+     <div class="eyebrow">M Commerce Simple</div>
+     <h2>Así puede verse tu catálogo online.</h2>
+     <p>Fotos reales, precios claros, categorías y botón para agregar al pedido. Tu cliente ve una tienda limpia y vos la administrás desde el panel.</p>
+     <ul class="feature-checks">
+       <li>Subís fotos desde el celular</li>
+       <li>Cambiás precios y disponibilidad</li>
+       <li>Organizás por categorías</li>
+       <li>Compartís tu tienda con link y QR</li>
+     </ul>
+     <a class="btn brand" href="/simple/app?mode=register">Quiero crear mi catálogo</a>
+   </div>
+   <div class="catalog-preview" role="img" aria-label="Ejemplo realista de catálogo M Commerce Simple">
+     <div class="catalog-phone">
+       <div class="catalog-top"><span class="catalog-avatar">MC</span><div><b>Mi Tienda</b><small>Catálogo online</small></div><span class="catalog-bag">🛍</span></div>
+       <div class="catalog-chips"><span class="active">Todo</span><span>Novedades</span><span>Accesorios</span></div>
+       <div class="catalog-demo-grid">
+         <article><img loading="lazy" src="https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&w=700&q=82" alt="Anillo de ejemplo"><div><b>Anillo Silver</b><strong>$ 27.900</strong><button type="button" tabindex="-1">Agregar</button></div></article>
+         <article><img loading="lazy" src="https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=700&q=82" alt="Cadena de ejemplo"><div><b>Cadena Urban</b><strong>$ 69.900</strong><button type="button" tabindex="-1">Agregar</button></div></article>
+         <article><img loading="lazy" src="https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&w=700&q=82" alt="Accesorio de ejemplo"><div><b>Accesorio Premium</b><strong>$ 54.900</strong><button type="button" tabindex="-1">Agregar</button></div></article>
+       </div>
+       <div class="catalog-cart">Ver pedido <b>3 productos</b></div>
+     </div>
+   </div>
+ </section>
+
+ <section id="planes" class="landing-section plans-section">
+   <div class="section-intro center"><div class="eyebrow">Elegí cómo empezar</div><h2>Simple para arrancar. PRO para llevarlo más lejos.</h2><p>Las dos opciones usan M Commerce, pero están pensadas para necesidades distintas.</p></div>
+   <div class="plans upgraded-plans">
+    <article class="plan simple">
+      <div class="plan-top"><div><div class="eyebrow">Autogestionable</div><h2>M Commerce Simple</h2></div><span class="plan-badge light">Empezá hoy</span></div>
+      <p>Para emprendedores y comercios que quieren una tienda profesional, rápida y económica, administrada por ellos mismos.</p>
+      <div class="price" id="simple-price">Plan mensual</div>
+      <ul class="ticks compact-ticks">
+        <li>Alta online autogestionable</li><li>Catálogo con fotos, categorías y precios</li><li>Carrito y pedidos online</li><li>Stock y disponibilidad</li><li>Variantes de productos</li><li>Retiro y delivery</li><li>Link propio + QR para compartir</li><li>Panel desde celular o PC</li><li>Mercado Pago del comercio</li>
+      </ul>
+      <a class="btn brand full" href="/simple/app?mode=register">Crear mi tienda Simple</a>
+    </article>
+
+    <article class="plan pro-plan">
+      <div class="pro-glow"></div>
+      <div class="plan-top"><div><div class="eyebrow">Solución personalizada</div><h2>M Commerce PRO</h2></div><span class="plan-badge pro">Recomendado para negocios</span></div>
+      <p>Para comercios que necesitan una presencia más fuerte, operaciones más complejas y una solución adaptada a su negocio.</p>
+      <ul class="ticks compact-ticks pro-ticks">
+        <li>Diseño e identidad visual personalizados</li><li>Dominio propio o subdominio profesional</li><li>Panel de comercio completo</li><li>Editor visual avanzado</li><li>Mercado Pago integrado</li><li>Gestión avanzada de pedidos</li><li>Seguimiento de pedidos</li><li>Stock y variantes avanzadas</li><li>Categorías y estructura a medida</li><li>Sucursales</li><li>Delivery y retiro configurables</li><li>Reservas cuando el rubro lo requiere</li><li>Notificaciones</li><li>Reportes y estadísticas</li><li>Soporte prioritario</li><li>Configuración e implementación personalizada</li>
+      </ul>
+      <div class="pro-actions"><a class="btn whatsapp-btn pro-wa full" href="https://wa.me/5493329698591?text=Hola%20Ema%2C%20vi%20M%20Commerce%20y%20quiero%20asesoramiento." target="_blank" rel="noopener noreferrer"><svg aria-hidden="true" viewBox="0 0 32 32" width="20" height="20"><path fill="currentColor" d="M19.1 17.4c-.3-.2-1.8-.9-2.1-1-.3-.1-.5-.2-.7.2-.2.3-.8 1-.9 1.2-.2.2-.3.2-.6.1-1.8-.9-3-1.7-4.2-3.8-.3-.5.3-.5.9-1.6.1-.2 0-.4 0-.6-.1-.2-.7-1.7-1-2.3-.3-.7-.6-.6-.8-.6h-.7c-.2 0-.6.1-.9.4-.3.3-1.2 1.2-1.2 2.9s1.2 3.3 1.4 3.6c.2.2 2.4 3.7 5.9 5.2.8.4 1.5.6 2 .7.8.3 1.6.2 2.2.1.7-.1 1.8-.7 2-1.4.3-.7.3-1.3.2-1.4-.1-.2-.3-.2-.6-.4M16.1 26h-.1c-1.8 0-3.5-.5-5-1.4l-.4-.2-3.7 1 1-3.6-.2-.4A10 10 0 1 1 16.1 26m8.5-18.6A12 12 0 0 0 5.7 21.9L4 28l6.3-1.6A12 12 0 1 0 24.6 7.4"/></svg><span>Hablá con Ema por PRO</span></a><a class="btn secondary full" href="/simple/pro">Enviar solicitud PRO</a></div>
+    </article>
+   </div>
+ </section>
+
+ <section id="comparacion" class="landing-section comparison-section">
+   <div class="section-intro"><div class="eyebrow">Comparación rápida</div><h2>La diferencia se ve en el nivel de personalización.</h2></div>
+   <div class="compare-table" role="table" aria-label="Comparación M Commerce Simple y PRO">
+     <div class="compare-row head" role="row"><div>Función</div><div>Simple</div><div>PRO</div></div>
+     <div class="compare-row"><div>Crear y administrar productos</div><div>✓</div><div>✓</div></div>
+     <div class="compare-row"><div>Carrito y pedidos online</div><div>✓</div><div>✓</div></div>
+     <div class="compare-row"><div>Mercado Pago propio</div><div>✓</div><div>✓</div></div>
+     <div class="compare-row"><div>Diseño personalizado</div><div>Base M Commerce</div><div><b>✓ A medida</b></div></div>
+     <div class="compare-row"><div>Editor avanzado / funciones especiales</div><div>—</div><div><b>✓</b></div></div>
+     <div class="compare-row"><div>Sucursales, reservas y flujos complejos</div><div>—</div><div><b>✓</b></div></div>
+     <div class="compare-row"><div>Implementación y soporte prioritario</div><div>Autogestión</div><div><b>✓ Equipo M Commerce</b></div></div>
+   </div>
+ </section>
+
+ <section class="final-cta">
+   <img src="/assets/m-commerce-brand-original-192.png" alt="" aria-hidden="true">
+   <div><div class="eyebrow">M Commerce</div><h2>Tu negocio puede empezar a vender online hoy.</h2><p>Creá tu tienda Simple o hablá con Ema si necesitás una solución PRO.</p></div>
+   <div class="final-actions"><a class="btn brand" href="/simple/app?mode=register">Crear mi tienda</a><a class="btn whatsapp-btn" href="https://wa.me/5493329698591?text=Hola%20Ema%2C%20vi%20M%20Commerce%20y%20quiero%20asesoramiento." target="_blank" rel="noopener noreferrer"><svg aria-hidden="true" viewBox="0 0 32 32" width="20" height="20"><path fill="currentColor" d="M19.1 17.4c-.3-.2-1.8-.9-2.1-1-.3-.1-.5-.2-.7.2-.2.3-.8 1-.9 1.2-.2.2-.3.2-.6.1-1.8-.9-3-1.7-4.2-3.8-.3-.5.3-.5.9-1.6.1-.2 0-.4 0-.6-.1-.2-.7-1.7-1-2.3-.3-.7-.6-.6-.8-.6h-.7c-.2 0-.6.1-.9.4-.3.3-1.2 1.2-1.2 2.9s1.2 3.3 1.4 3.6c.2.2 2.4 3.7 5.9 5.2.8.4 1.5.6 2 .7.8.3 1.6.2 2.2.1.7-.1 1.8-.7 2-1.4.3-.7.3-1.3.2-1.4-.1-.2-.3-.2-.6-.4M16.1 26h-.1c-1.8 0-3.5-.5-5-1.4l-.4-.2-3.7 1 1-3.6-.2-.4A10 10 0 1 1 16.1 26m8.5-18.6A12 12 0 0 0 5.7 21.9L4 28l6.3-1.6A12 12 0 1 0 24.6 7.4"/></svg><span>Hablá con Ema</span></a></div>
+ </section>
+ </main>
+ <footer class="site-footer">
+   <div class="footer-brand"><img src="/assets/m-commerce-brand-original-192.png" alt="M Commerce"><div><strong>M COMMERCE</strong><span>Tu tienda online</span></div></div>
+   <div class="footer-links"><a href="#planes">Planes</a><a href="#como-funciona">Cómo funciona</a><a href="#comparacion">Simple vs PRO</a><a href="https://wa.me/5493329698591?text=Hola%20Ema%2C%20vi%20M%20Commerce%20y%20quiero%20asesoramiento." target="_blank" rel="noopener noreferrer">WhatsApp</a><a href="https://www.instagram.com/mcommercee/" target="_blank" rel="noopener noreferrer">Instagram</a></div>
+   <small>© M Commerce · Plataforma de tiendas online.</small>
+ </footer>
+ <a class="floating-whatsapp" href="https://wa.me/5493329698591?text=Hola%20Ema%2C%20vi%20M%20Commerce%20y%20quiero%20asesoramiento." target="_blank" rel="noopener noreferrer" aria-label="Hablar con Ema por WhatsApp"><svg aria-hidden="true" viewBox="0 0 32 32" width="20" height="20"><path fill="currentColor" d="M19.1 17.4c-.3-.2-1.8-.9-2.1-1-.3-.1-.5-.2-.7.2-.2.3-.8 1-.9 1.2-.2.2-.3.2-.6.1-1.8-.9-3-1.7-4.2-3.8-.3-.5.3-.5.9-1.6.1-.2 0-.4 0-.6-.1-.2-.7-1.7-1-2.3-.3-.7-.6-.6-.8-.6h-.7c-.2 0-.6.1-.9.4-.3.3-1.2 1.2-1.2 2.9s1.2 3.3 1.4 3.6c.2.2 2.4 3.7 5.9 5.2.8.4 1.5.6 2 .7.8.3 1.6.2 2.2.1.7-.1 1.8-.7 2-1.4.3-.7.3-1.3.2-1.4-.1-.2-.3-.2-.6-.4M16.1 26h-.1c-1.8 0-3.5-.5-5-1.4l-.4-.2-3.7 1 1-3.6-.2-.4A10 10 0 1 1 16.1 26m8.5-18.6A12 12 0 0 0 5.7 21.9L4 28l6.3-1.6A12 12 0 1 0 24.6 7.4"/></svg><span>Hablá con Ema</span></a>
+ </div>`;
  loadPrice();
 }
 function proRequest(){
