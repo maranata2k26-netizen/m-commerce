@@ -56,6 +56,25 @@ begin
   end if;
 end $$;
 
+create table if not exists public.simple_pro_leads (
+  id uuid primary key default gen_random_uuid(),
+  name text not null check (char_length(trim(name)) between 2 and 120),
+  email text not null check (char_length(trim(email)) between 5 and 254),
+  phone text check (phone is null or char_length(trim(phone)) between 8 and 40),
+  business_name text not null check (char_length(trim(business_name)) between 2 and 120),
+  details text not null default '' check (char_length(details) <= 2000),
+  status text not null default 'new' check (status in ('new','contacted','qualified','closed')),
+  source text not null default 'simple_landing',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+alter table public.simple_pro_leads enable row level security;
+revoke all on table public.simple_pro_leads from anon, authenticated;
+
+create index if not exists simple_pro_leads_status_created_idx
+  on public.simple_pro_leads(status, created_at desc);
+
 create table if not exists public.product_categories (
   id uuid primary key default gen_random_uuid(),
   site_id uuid not null references public.sites(id) on delete cascade,
@@ -556,6 +575,25 @@ $$;
 
 revoke all on function public.simple_my_store() from public;
 grant execute on function public.simple_my_store() to authenticated;
+
+create or replace function public.simple_master_pro_leads()
+returns jsonb
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare v_result jsonb;
+begin
+  if not public.platform_is_master_admin() then raise exception 'ADMIN_REQUIRED'; end if;
+  select coalesce(jsonb_agg(to_jsonb(l) order by l.created_at desc),'[]'::jsonb)
+  into v_result
+  from public.simple_pro_leads l;
+  return v_result;
+end;
+$$;
+
+revoke all on function public.simple_master_pro_leads() from public;
+grant execute on function public.simple_master_pro_leads() to authenticated;
 
 create or replace function public.simple_master_stores()
 returns jsonb
