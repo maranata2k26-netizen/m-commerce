@@ -4,12 +4,13 @@ import { createClient } from "jsr:@supabase/supabase-js@2";
 const SUPABASE_URL=Deno.env.get("SUPABASE_URL")??"";
 const SERVICE=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")??"";
 const PUBLIC_ORIGINS=new Set([
+  "https://mcommerce.vercel.app",
   "https://m-commerce-ar.vercel.app",
   "http://localhost:3000",
   "http://127.0.0.1:3000"
 ]);
 function headers(req:Request){
-  const origin=req.headers.get("origin")||"https://m-commerce-ar.vercel.app";
+  const origin=req.headers.get("origin")||"https://mcommerce.vercel.app";
   return {"access-control-allow-origin":origin,"access-control-allow-headers":"authorization,apikey,content-type","access-control-allow-methods":"POST,OPTIONS","vary":"origin","cache-control":"no-store"};
 }
 function json(req:Request,body:unknown,status=200){return new Response(JSON.stringify(body),{status,headers:{...headers(req),"content-type":"application/json; charset=utf-8"}})}
