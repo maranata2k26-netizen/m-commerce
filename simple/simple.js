@@ -60,6 +60,31 @@ function landing(){
    <div><b>Escalable</b><span>Empezá Simple y pasá a PRO cuando lo necesites.</span></div>
  </section>
 
+ <section class="social-proof" aria-label="Experiencia M Commerce">
+   <div class="section-intro center">
+     <div class="eyebrow">Experiencia M Commerce</div>
+     <h2>Más de 150 tiendas funcionando.</h2>
+     <p>Una plataforma pensada para que vender online sea simple, rápido y ordenado.</p>
+   </div>
+   <div class="testimonial-grid">
+     <article class="testimonial-card">
+       <span class="testimonial-label">Mensaje de muestra</span>
+       <p>“La verdad, el flujo para cargar productos y recibir pedidos es muchísimo más simple de lo que esperaba.”</p>
+       <strong>Comercio M Commerce</strong>
+     </article>
+     <article class="testimonial-card">
+       <span class="testimonial-label">Mensaje de muestra</span>
+       <p>“Me gustó que el cliente entra, ve todo claro y puede hacer el pedido sin vueltas. Eso era justamente lo que buscaba.”</p>
+       <strong>Comercio M Commerce</strong>
+     </article>
+     <article class="testimonial-card">
+       <span class="testimonial-label">Mensaje de muestra</span>
+       <p>“El panel es práctico y desde el celular puedo controlar mi tienda sin estar dependiendo de una computadora.”</p>
+       <strong>Comercio M Commerce</strong>
+     </article>
+   </div>
+ </section>
+
  <section id="como-funciona" class="landing-section">
    <div class="section-intro"><div class="eyebrow">Así de simple</div><h2>De cero a tienda online en pocos pasos.</h2><p>No necesitás saber programar. M Commerce te guía y después administrás tu catálogo desde el mismo panel.</p></div>
    <div class="steps-grid">
