@@ -15,8 +15,12 @@ function headers(req:Request){
 function json(req:Request,body:unknown,status=200){return new Response(JSON.stringify(body),{status,headers:{...headers(req),"content-type":"application/json; charset=utf-8"}})}
 const uuid=(v:unknown)=>/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(v||""));
 const cut=(v:unknown,n:number)=>String(v??"").trim().slice(0,n);
+function coord(v:unknown,min:number,max:number){if(v===null||v===undefined||v==="")return null;const n=Number(v);if(!Number.isFinite(n)||n<min||n>max)throw new Error("INVALID_DELIVERY_COORDINATES");return n}
 async function sha(value:string){const bytes=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(value));return [...new Uint8Array(bytes)].map(x=>x.toString(16).padStart(2,"0")).join("")}
 function waMessage(order:any,items:any[],body:any){
+  const lat=coord(body?.delivery_latitude,-90,90),lng=coord(body?.delivery_longitude,-180,180);
+  const mapUrl=lat!==null&&lng!==null?`https://www.google.com/maps?q=${lat},${lng}`:"";
+  const payLabel=body.payment_method==="cash"?"Efectivo":body.payment_method==="transfer"?"Transferencia":"Mercado Pago";
   const lines=[
     `Pedido #${order.order_number}`,
     "",
@@ -24,8 +28,11 @@ function waMessage(order:any,items:any[],body:any){
     ...items.map(i=>`${i.quantity} × ${i.product_name}${i.variant_name?" · "+i.variant_name:""} — $${Number(i.line_total).toLocaleString("es-AR")}`),
     "",
     `Entrega: ${body.delivery_method==="delivery"?"Delivery":"Retiro"}`,
-    body.delivery_method==="delivery"?`Dirección: ${cut(body.delivery_address,500)}`:"",
-    `Forma de pago: ${body.payment_method==="cash"?"Efectivo":"Transferencia"}`,
+    body.delivery_method==="delivery"?`Dirección: ${cut(body.delivery_address_formatted||body.delivery_address,500)}`:"",
+    body.delivery_method==="delivery"&&cut(body.delivery_unit,120)?`Piso / depto: ${cut(body.delivery_unit,120)}`:"",
+    body.delivery_method==="delivery"&&mapUrl?`Ubicación exacta: ${mapUrl}`:"",
+    body.delivery_method==="delivery"&&cut(body.delivery_instructions,500)?`Indicaciones: ${cut(body.delivery_instructions,500)}`:"",
+    `Forma de pago: ${payLabel}`,
     `Total: $${Number(order.total).toLocaleString("es-AR")}`
   ].filter(Boolean);
   return lines.join("\n");
@@ -58,6 +65,14 @@ Deno.serve(async(req:Request)=>{
       return new Response(await forwarded.text(),{status:forwarded.status,headers:{...headers(req),"content-type":"application/json; charset=utf-8"}});
     }
     const customerName=cut(body?.customer_name,120),phone=cut(body?.customer_phone,40),address=cut(body?.delivery_address,500),delivery=body?.delivery_method==="delivery"?"delivery":"pickup";
+    const lat=delivery==="delivery"?coord(body?.delivery_latitude,-90,90):null;
+    const lng=delivery==="delivery"?coord(body?.delivery_longitude,-180,180):null;
+    if((lat===null)!==(lng===null))return json(req,{error:"INVALID_DELIVERY_COORDINATES",message:"La ubicación exacta está incompleta."},422);
+    const place=delivery==="delivery"?cut(body?.delivery_place_id,240):"";
+    const formatted=delivery==="delivery"?cut(body?.delivery_address_formatted,500):"";
+    const source=delivery==="delivery"?cut(body?.delivery_address_source,30):"";
+    const unit=delivery==="delivery"?cut(body?.delivery_unit,120):"";
+    const instructions=delivery==="delivery"?cut(body?.delivery_instructions,500):"";
     const phoneDigits=phone.replace(/\D/g,"");
     if(customerName.length<2)return json(req,{error:"INVALID_CUSTOMER_NAME",message:"Ingresá un nombre válido."},422);
     if(phoneDigits.length<8||phoneDigits.length>15)return json(req,{error:"INVALID_CUSTOMER_PHONE",message:"Ingresá un teléfono válido."},422);
@@ -73,20 +88,29 @@ Deno.serve(async(req:Request)=>{
       p_payment_method:method,p_site_id:siteId,p_items:items,p_checkout_attempt_id:attempt
     });
     if(createError)throw createError;
+    if(delivery==="delivery"){
+      const exactUpdate=await admin.from("orders").update({
+        delivery_latitude:lat,delivery_longitude:lng,
+        delivery_place_id:place||null,delivery_address_formatted:formatted||address||null,
+        delivery_address_source:source||(lat!==null?"geoapify":"manual"),
+        delivery_unit:unit||null,delivery_instructions:instructions||null
+      }).eq("id",order.id).eq("site_id",siteId);
+      if(exactUpdate.error)throw exactUpdate.error;
+    }
     const {data:orderItems,error:itemError}=await admin.from("order_items").select("product_name,variant_name,quantity,line_total").eq("order_id",order.id).eq("site_id",siteId).order("id");
     if(itemError)throw itemError;
     const businessPhone=String(settings.whatsapp_number||"").replace(/\D/g,"");
-    const message=waMessage(order,orderItems||[],{...body,payment_method:method});
+    const message=waMessage(order,orderItems||[],{...body,payment_method:method,delivery_latitude:lat,delivery_longitude:lng,delivery_address_formatted:formatted||address,delivery_place_id:place,delivery_unit:unit,delivery_instructions:instructions});
     try{
       const pushResponse=await fetch(SUPABASE_URL+"/functions/v1/j3-push",{method:"POST",headers:{"content-type":"application/json","apikey":SERVICE,"authorization":"Bearer "+SERVICE},body:JSON.stringify({order_id:order.id})});
       if(!pushResponse.ok)console.warn("push_queue_status",pushResponse.status);
     }catch(e){console.warn("push_queue",e)}
-    console.log(JSON.stringify({event:"simple_order_created",site_id:siteId,order_id:order.id,order_number:order.order_number,payment_method:method}));
+    console.log(JSON.stringify({event:"simple_order_created",site_id:siteId,order_id:order.id,order_number:order.order_number,payment_method:method,exact_delivery_location:lat!==null&&lng!==null}));
     return json(req,{kind:"whatsapp",idempotent_replay:!!order.idempotent_replay,order,whatsapp_url:businessPhone?`https://wa.me/${businessPhone}?text=${encodeURIComponent(message)}`:null},order.idempotent_replay?200:201);
   }catch(error){
     const raw=error instanceof Error?error.message:String(error);
     console.error(JSON.stringify({event:"simple_checkout_failed",error:raw.slice(0,300)}));
-    const map:any={product_not_available:"Uno de los productos ya no está disponible.",insufficient_stock:"No queda stock suficiente.",variant_required:"Elegí una variante.",orders_closed:"El comercio no está recibiendo pedidos."};
+    const map:any={product_not_available:"Uno de los productos ya no está disponible.",insufficient_stock:"No queda stock suficiente.",variant_required:"Elegí una variante.",orders_closed:"El comercio no está recibiendo pedidos.",invalid_delivery_coordinates:"La ubicación exacta no es válida."};
     const key=Object.keys(map).find(k=>raw.toLowerCase().includes(k));
     return json(req,{error:"CHECKOUT_FAILED",message:key?map[key]:"No se pudo registrar el pedido. Intentá nuevamente."},400);
   }
