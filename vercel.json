@@ -1,6 +1,7 @@
 {
   "cleanUrls": false,
   "trailingSlash": false,
+  "alias": ["mcommerce.vercel.app"],
   "rewrites": [
     {
       "source": "/simple",
