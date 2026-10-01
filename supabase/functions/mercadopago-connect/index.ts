@@ -6,7 +6,8 @@ const SERVICE_ROLE=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")??"";
 const ANON=Deno.env.get("SUPABASE_ANON_KEY")??"";
 const CLIENT_ID=(Deno.env.get("MERCADOPAGO_CLIENT_ID")??"").trim();
 const CLIENT_SECRET=(Deno.env.get("MERCADOPAGO_CLIENT_SECRET")??"").trim();
-const PUBLIC_URL="https://m-commerce-ar.vercel.app";
+const PUBLIC_URL="https://mcommerce.vercel.app";
+const OLD_PUBLIC_URL="https://m-commerce-ar.vercel.app";
 const LEGACY_PUBLIC_URL="https://j3-plataform.vercel.app";
 const CALLBACK=`${SUPABASE_URL}/functions/v1/mercadopago-connect`;
 const KNOWN=new Set(["AUTH_REQUIRED","ADMIN_REQUIRED","SITE_ACCESS_DENIED","OWNER_REQUIRED","OAUTH_APP_NOT_CONFIGURED","INVALID_ACTION","METHOD_NOT_ALLOWED","MP_OAUTH_TOKEN_FAILED","MP_ACCOUNT_VERIFY_FAILED","MP_ACCOUNT_ALREADY_USED","MP_ACCOUNT_IN_USE","STATE_INVALID","STATE_EXPIRED","STATE_TYPE_INVALID","NO_MP_USER","INTERNAL_ERROR"]);
@@ -15,7 +16,7 @@ function b64url(bytes:Uint8Array){return btoa(String.fromCharCode(...bytes)).rep
 async function sha256(s:string){return new Uint8Array(await crypto.subtle.digest("SHA-256",new TextEncoder().encode(s)))}
 function random(n=48){return b64url(crypto.getRandomValues(new Uint8Array(n)))}
 function safeError(e:unknown){if(e instanceof Error&&KNOWN.has(e.message))return e.message;const x=e as Record<string,unknown>|null;const candidate=String(x?.message||x?.code||"");return KNOWN.has(candidate)?candidate:"INTERNAL_ERROR"}
-function cors(req:Request){const o=req.headers.get("origin");const allowed=o===PUBLIC_URL||o===LEGACY_PUBLIC_URL;return {"Access-Control-Allow-Origin":allowed?o:PUBLIC_URL,"Access-Control-Allow-Headers":"authorization, apikey, content-type","Access-Control-Allow-Methods":"GET,POST,OPTIONS","Vary":"Origin"}}
+function cors(req:Request){const o=req.headers.get("origin");const allowed=o===PUBLIC_URL||o===OLD_PUBLIC_URL||o===LEGACY_PUBLIC_URL;return {"Access-Control-Allow-Origin":allowed?o:PUBLIC_URL,"Access-Control-Allow-Headers":"authorization, apikey, content-type","Access-Control-Allow-Methods":"GET,POST,OPTIONS","Vary":"Origin"}}
 function json(req:Request,b:unknown,status=200){return new Response(JSON.stringify(b),{status,headers:{...cors(req),"content-type":"application/json","cache-control":"no-store"}})}
 function redirect(url:string){return new Response(null,{status:303,headers:{Location:url,"Cache-Control":"no-store","Referrer-Policy":"no-referrer"}})}
 function email(v:unknown){return String(v??"").trim().toLowerCase()}
