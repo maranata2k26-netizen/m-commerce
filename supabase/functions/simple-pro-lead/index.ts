@@ -3,8 +3,8 @@ import { createClient } from "jsr:@supabase/supabase-js@2";
 
 const SUPABASE_URL=Deno.env.get("SUPABASE_URL")??"";
 const SERVICE=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")??"";
-const ORIGINS=new Set(["https://m-commerce-ar.vercel.app","http://localhost:3000","http://127.0.0.1:3000"]);
-const cors=(req:Request)=>{const origin=req.headers.get("origin")||"";return {"access-control-allow-origin":ORIGINS.has(origin)?origin:"https://m-commerce-ar.vercel.app","access-control-allow-headers":"apikey,content-type","access-control-allow-methods":"POST,OPTIONS","vary":"origin","cache-control":"no-store"}};
+const ORIGINS=new Set(["https://mcommerce.vercel.app","https://m-commerce-ar.vercel.app","http://localhost:3000","http://127.0.0.1:3000"]);
+const cors=(req:Request)=>{const origin=req.headers.get("origin")||"";return {"access-control-allow-origin":ORIGINS.has(origin)?origin:"https://mcommerce.vercel.app","access-control-allow-headers":"apikey,content-type","access-control-allow-methods":"POST,OPTIONS","vary":"origin","cache-control":"no-store"}};
 const json=(req:Request,body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:{...cors(req),"content-type":"application/json; charset=utf-8"}});
 const cut=(v:unknown,n:number)=>String(v??"").trim().slice(0,n);
 async function hash(value:string){const bytes=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(value));return [...new Uint8Array(bytes)].map(x=>x.toString(16).padStart(2,"0")).join("")}
