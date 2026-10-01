@@ -16,7 +16,7 @@ jobs:
         with:
           deno-version: v2.x
       - name: Validate browser JavaScript
-        run: node --check simple/simple.js && node --check simple/simple-bootstrap.js && node --check simple/simple-enhancements.js
+        run: node --check simple/simple.js && node --check simple/simple-bootstrap.js && node --check simple/simple-enhancements-v2.js
       - name: Validate Vercel config
         run: node -e "JSON.parse(require('fs').readFileSync('vercel.json','utf8'))"
       - name: Type-check Edge Functions
