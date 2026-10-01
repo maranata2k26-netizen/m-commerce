@@ -2,11 +2,11 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 const SUPABASE_URL=Deno.env.get('SUPABASE_URL')??'',SERVICE=Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')??'',ANON=Deno.env.get('SUPABASE_ANON_KEY')??'';
 const CLIENT_ID=(Deno.env.get('MERCADOPAGO_CLIENT_ID')??'').trim(),CLIENT_SECRET=(Deno.env.get('MERCADOPAGO_CLIENT_SECRET')??'').trim();
-const PUBLIC_URL='https://m-commerce-ar.vercel.app',LEGACY_PUBLIC_URL='https://j3-plataform.vercel.app',OAUTH_CALLBACK=`${SUPABASE_URL}/functions/v1/mercadopago-connect`,PROVIDER='mercadopago';
+const PUBLIC_URL='https://mcommerce.vercel.app',OLD_PUBLIC_URL='https://m-commerce-ar.vercel.app',LEGACY_PUBLIC_URL='https://j3-plataform.vercel.app',OAUTH_CALLBACK=`${SUPABASE_URL}/functions/v1/mercadopago-connect`,PROVIDER='mercadopago';
 function b64url(b:Uint8Array){return btoa(String.fromCharCode(...b)).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')}
 async function sha256(s:string){return new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s)))}
 function random(n=48){return b64url(crypto.getRandomValues(new Uint8Array(n)))}
-function cors(req:Request){const o=req.headers.get('origin');const allowed=o===PUBLIC_URL||o===LEGACY_PUBLIC_URL;return {'Access-Control-Allow-Origin':allowed?o:PUBLIC_URL,'Access-Control-Allow-Headers':'authorization, apikey, content-type','Access-Control-Allow-Methods':'POST,OPTIONS','Vary':'Origin'}}
+function cors(req:Request){const o=req.headers.get('origin');const allowed=o===PUBLIC_URL||o===OLD_PUBLIC_URL||o===LEGACY_PUBLIC_URL;return {'Access-Control-Allow-Origin':allowed?o:PUBLIC_URL,'Access-Control-Allow-Headers':'authorization, apikey, content-type','Access-Control-Allow-Methods':'POST,OPTIONS','Vary':'Origin'}}
 function json(req:Request,b:unknown,status=200){return new Response(JSON.stringify(b),{status,headers:{...cors(req),'content-type':'application/json','cache-control':'no-store'}})}
 function validUuid(v:string){return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(v)}
 async function authUser(req:Request){const auth=req.headers.get('authorization')||'';if(!auth.startsWith('Bearer '))throw new Error('AUTH_REQUIRED');const c=createClient(SUPABASE_URL,ANON,{global:{headers:{Authorization:auth}},auth:{persistSession:false}});const {data:{user},error}=await c.auth.getUser();if(error||!user)throw new Error('AUTH_REQUIRED');return {user,client:c}}
