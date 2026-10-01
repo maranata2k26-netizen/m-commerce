@@ -2,6 +2,19 @@
   "cleanUrls": false,
   "trailingSlash": false,
   "alias": ["mcommerce.vercel.app"],
+  "redirects": [
+    {
+      "source": "/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "m-commerce-ar.vercel.app"
+        }
+      ],
+      "destination": "https://mcommerce.vercel.app/:path*",
+      "permanent": true
+    }
+  ],
   "rewrites": [
     {
       "source": "/simple",
