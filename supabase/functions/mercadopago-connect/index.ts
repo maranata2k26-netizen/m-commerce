@@ -1,12 +1,12 @@
-import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { createClient } from "jsr:@supabase/supabase-js@2";
+import { createClient } from "npm:@supabase/supabase-js@2.117.2";
 
 const SUPABASE_URL=Deno.env.get("SUPABASE_URL")??"";
 const SERVICE_ROLE=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")??"";
 const ANON=Deno.env.get("SUPABASE_ANON_KEY")??"";
 const CLIENT_ID=(Deno.env.get("MERCADOPAGO_CLIENT_ID")??"").trim();
 const CLIENT_SECRET=(Deno.env.get("MERCADOPAGO_CLIENT_SECRET")??"").trim();
-const PUBLIC_URL=(SUPABASE_URL.replace(/\/+$/,"")==="https://jcgvunffeskkbgsbomgy.supabase.co"?"https://m-commerce-staging.vercel.app":(Deno.env.get("M_COMMERCE_PUBLIC_ORIGIN")||"https://mcommerce.vercel.app")).replace(/\/+$/,"");
+const IS_STAGING=SUPABASE_URL.replace(/\/+$/,"")==="https://jcgvunffeskkbgsbomgy.supabase.co";
+const PUBLIC_URL=(IS_STAGING?"https://m-commerce-staging.vercel.app":(Deno.env.get("M_COMMERCE_PUBLIC_ORIGIN")||"https://mcommerce.vercel.app")).replace(/\/$/,"");
 const OLD_PUBLIC_URL="https://m-commerce-ar.vercel.app";
 const LEGACY_PUBLIC_URL="https://j3-plataform.vercel.app";
 const CALLBACK=`${SUPABASE_URL}/functions/v1/mercadopago-connect`;
@@ -85,7 +85,7 @@ Deno.serve(async(req)=>{
   const siteId=String(body?.site_id||"");
   if(!await canManageMerchant(admin,user.id,siteId))return json(req,{error:"OWNER_REQUIRED",message:"Solo el dueño del comercio o el administrador maestro puede administrar Mercado Pago."},403);
   if(body.action==="disconnect"){const stopped=await admin.from("mercadopago_connections").update({status:"disconnected",updated_at:new Date().toISOString()}).eq("site_id",siteId);if(stopped.error)throw stopped.error;await admin.from("oauth_states").delete().eq("site_id",siteId);return json(req,{connected:false})}
-  if(!CLIENT_ID||!CLIENT_SECRET)return json(req,{error:"OAUTH_APP_NOT_CONFIGURED"},503);
+  if(!CLIENT_ID||!CLIENT_SECRET)return json(req,{error:"OAUTH_APP_NOT_CONFIGURED",message:"Mercado Pago todavía no está configurado en esta plataforma. Contactá a M Commerce para habilitar la conexión."},503);
   await admin.from("oauth_states").delete().eq("user_id",user.id);await admin.from("oauth_states").delete().lt("expires_at",new Date().toISOString());
   const opaque=random(32),state=`mc.${opaque}`,verifier=random(64),challenge=b64url(await sha256(verifier)),stateHash=b64url(await sha256(state));
   const saved=await admin.from("oauth_states").insert({state_hash:stateHash,site_id:siteId,user_id:user.id,code_verifier:verifier,flow_type:"merchant",expires_at:new Date(Date.now()+10*60_000).toISOString()});if(saved.error)throw saved.error;
