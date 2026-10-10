@@ -1,8 +1,8 @@
 (()=>{
   "use strict";
 
-  const PROJECT_URL="https://kjoixhzaxopdbmudzfsg.supabase.co";
-  const API_KEY="sb_publishable_G9dKTg3ev1183qjfVkqMXg_kp5WDPaq";
+  const PROJECT_URL=window.M_COMMERCE_SUPABASE_URL;
+  const API_KEY=window.M_COMMERCE_SUPABASE_KEY;
   const LOCATION_URL=PROJECT_URL+"/functions/v1/m-commerce-location";
   let rpcHooked=false;
   let fetchHooked=false;
