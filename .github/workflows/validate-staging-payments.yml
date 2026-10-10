@@ -57,6 +57,4 @@ jobs:
           case "$status" in 401|503) echo "Unsigned billing webhook rejected ($status)";; *) echo "Unsigned billing webhook not rejected: $status"; exit 1;; esac
       - name: Check existing Simple browser JS
         run: |
-          node --check simple/simple.js
-          node --check simple/simple-bootstrap.js
-          node --check simple/simple-enhancements-v2.js
+          for script in simple/*.js; do node --check "$script"; done
