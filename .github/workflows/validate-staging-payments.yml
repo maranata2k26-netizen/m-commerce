@@ -35,6 +35,23 @@ jobs:
           do
             deno check "supabase/functions/$function/index.ts"
           done
+      - name: Smoke-test staging payment guards (no secrets, no payments)
+        run: |
+          set -euo pipefail
+          base="https://jcgvunffeskkbgsbomgy.supabase.co/functions/v1"
+          status=$(curl --max-time 15 -sS -o /tmp/mc-account-status.json -w '%{http_code}' \
+            -X POST -H 'content-type: application/json' -H 'Origin: https://m-commerce-staging.vercel.app' \
+            -d '{"action":"account_status"}' "$base/j3-billing-account")
+          test "$status" = "401" || { echo "Unauthenticated billing account endpoint: $status"; exit 1; }
+          status=$(curl --max-time 15 -sS -o /tmp/mc-checkout-status.json -w '%{http_code}' \
+            -X POST -H 'content-type: application/json' -H 'Origin: https://m-commerce-staging.vercel.app' \
+            -d '{"checkout_attempt_id":"11111111-1111-4111-8111-111111111111"}' "$base/checkout-create")
+          test "$status" = "422" || { echo "Missing site id checkout: $status"; exit 1; }
+          grep -q 'INVALID_SITE' /tmp/mc-checkout-status.json
+          status=$(curl --max-time 15 -sS -o /tmp/mc-hook-status.json -w '%{http_code}' \
+            -X POST -H 'content-type: application/json' \
+            -d '{"type":"payment","data":{"id":"123456789012"}}' "$base/j3-billing-webhook")
+          case "$status" in 401|503) echo "Unsigned billing webhook rejected ($status)";; *) echo "Unsigned billing webhook not rejected: $status"; exit 1;; esac
       - name: Check existing Simple browser JS
         run: |
           node --check simple/simple.js
