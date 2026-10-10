@@ -55,3 +55,12 @@ test('the environment initializes before client creation, without production run
   assert.ok(html.indexOf('/simple/simple-bootstrap.js') < html.indexOf('/simple/simple.js'));
   assert.doesNotMatch(html, /src=["']\/config\.js/, 'Simple must not load production j3-runtime config.js on staging');
 });
+
+
+test('public storefront URLs never share deprecated domains or transient preview hosts', () => {
+  const js = read('simple/simple.js');
+  assert.doesNotMatch(js, /m-commerce-ar\.vercel\.app\/tienda\//);
+  assert.doesNotMatch(js, /const url=location\.origin\+"\/tienda\//);
+  assert.match(js, /const url=window\.M_COMMERCE_OFFICIAL_ORIGIN\+"\/tienda\/"\+encodeURIComponent\(slug\)/);
+  assert.match(js, /window\.M_COMMERCE_OFFICIAL_ORIGIN\+"\/tienda\/"\+encodeURIComponent\(site\.slug\)/);
+});
