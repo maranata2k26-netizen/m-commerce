@@ -64,3 +64,25 @@ test('public storefront URLs never share deprecated domains or transient preview
   assert.match(js, /const url=window\.M_COMMERCE_OFFICIAL_ORIGIN\+"\/tienda\/"\+encodeURIComponent\(slug\)/);
   assert.match(js, /window\.M_COMMERCE_OFFICIAL_ORIGIN\+"\/tienda\/"\+encodeURIComponent\(site\.slug\)/);
 });
+
+
+test('Simple CSP lets staging reach its own API and Storage, without opening scripts to third parties', () => {
+  const config = JSON.parse(read('vercel.json'));
+  const prod = 'https://kjoixhzaxopdbmudzfsg.supabase.co';
+  const staging = 'https://jcgvunffeskkbgsbomgy.supabase.co';
+  const expectedRoutes = ['/simple', '/simple/(.*)', '/tienda/(.*)'];
+  for (const route of expectedRoutes) {
+    const rule = config.headers.find(row => row.source === route);
+    assert.ok(rule, 'missing security headers for ' + route);
+    const csp = rule.headers.find(h => h.key.toLowerCase() === 'content-security-policy')?.value || '';
+    assert.ok(csp.includes('connect-src \'self\' ' + prod + ' ' + staging), 'stage API blocked: ' + route);
+    assert.ok(csp.includes('wss://jcgvunffeskkbgsbomgy.supabase.co'), 'stage websocket blocked: ' + route);
+    assert.ok(csp.includes('img-src \'self\' data: ' + prod + ' ' + staging), 'stage Storage blocked: ' + route);
+    assert.match(csp, /frame-ancestors 'none'/, route);
+    assert.match(csp, /script-src 'self' https:\/\/cdn\.jsdelivr\.net/, route);
+  }
+});
+
+test('landing does not invent a number of active customer shops', () => {
+  assert.doesNotMatch(read('simple/simple.js'), /Más de 150 tiendas funcionando/);
+});
