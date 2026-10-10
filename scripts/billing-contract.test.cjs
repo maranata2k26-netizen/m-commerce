@@ -48,6 +48,10 @@ test('subscription payment webhooks fail closed without a valid signature', () =
   assert.match(code, /ps==='pending'\?'pending'/);
 });
 
+test('staging checkout cannot silently bill the legacy Maranata merchant for a missing store id', () => {
+  assert.match(fn('checkout-create'), /IS_STAGING\?'':LEGACY_SITE_ID/);
+});
+
 test('edge code does not embed credentials or production service-role JWTs', () => {
   for (const name of ['j3-billing', 'j3-billing-account', 'j3-billing-webhook',
     'mercadopago-connect', 'checkout-create', 'platform-admin', 'simple-checkout']) {
