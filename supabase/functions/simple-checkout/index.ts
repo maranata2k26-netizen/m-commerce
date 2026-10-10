@@ -1,5 +1,4 @@
-import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { createClient } from "jsr:@supabase/supabase-js@2";
+import { createClient } from "npm:@supabase/supabase-js@2.117.2";
 
 const SUPABASE_URL=Deno.env.get("SUPABASE_URL")??"";
 const SERVICE=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")??"";
@@ -9,6 +8,9 @@ const PUBLIC_ORIGINS=new Set([
   "http://localhost:3000",
   "http://127.0.0.1:3000"
 ]);
+const configuredOrigin=Deno.env.get("M_COMMERCE_PUBLIC_ORIGIN")?.replace(/\/+$/,"");
+if(configuredOrigin)PUBLIC_ORIGINS.add(configuredOrigin);
+if(SUPABASE_URL.replace(/\/+$/,'')==='https://jcgvunffeskkbgsbomgy.supabase.co')PUBLIC_ORIGINS.add('https://m-commerce-staging.vercel.app');
 function headers(req:Request){
   const origin=req.headers.get("origin")||"https://mcommerce.vercel.app";
   return {"access-control-allow-origin":origin,"access-control-allow-headers":"authorization,apikey,content-type","access-control-allow-methods":"POST,OPTIONS","vary":"origin","cache-control":"no-store"};
@@ -78,6 +80,7 @@ Deno.serve(async(req:Request)=>{
     if(customerName.length<2)return json(req,{error:"INVALID_CUSTOMER_NAME",message:"Ingresá un nombre válido."},422);
     if(phoneDigits.length<8||phoneDigits.length>15)return json(req,{error:"INVALID_CUSTOMER_PHONE",message:"Ingresá un teléfono válido."},422);
     if(delivery==="delivery"&&address.length<5)return json(req,{error:"DELIVERY_ADDRESS_REQUIRED",message:"Ingresá la dirección de entrega."},422);
+    if(Array.isArray(body?.items)&&body.items.length>40)return json(req,{error:"TOO_MANY_ITEMS",message:"El pedido puede incluir hasta 40 productos o variantes diferentes."},422);
     const items=Array.isArray(body?.items)?body.items.slice(0,40).map((x:any)=>({product_id:String(x?.product_id||""),quantity:Number(x?.quantity||0),extra_ids:[],removed_ingredient_ids:[],note:"",variant_id:x?.variant_id?String(x.variant_id):null})):[];
     if(!items.length)return json(req,{error:"INVALID_ITEMS",message:"El carrito está vacío."},422);
     const ip=(req.headers.get("x-forwarded-for")??"unknown").split(",")[0].trim();
