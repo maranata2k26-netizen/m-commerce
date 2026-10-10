@@ -1,6 +1,6 @@
 (()=>{"use strict";
-const SUPABASE_URL="https://kjoixhzaxopdbmudzfsg.supabase.co";
-const SUPABASE_KEY="sb_publishable_G9dKTg3ev1183qjfVkqMXg_kp5WDPaq";
+const SUPABASE_URL=window.M_COMMERCE_SUPABASE_URL;
+const SUPABASE_KEY=window.M_COMMERCE_SUPABASE_KEY;
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
 const app=document.getElementById("app"),toastEl=document.getElementById("toast");
 const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
