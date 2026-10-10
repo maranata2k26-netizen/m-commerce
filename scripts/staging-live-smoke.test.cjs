@@ -45,3 +45,26 @@ test('live staging CSP allows its own API and Storage on every Simple route', as
     assert.match(csp, /frame-ancestors 'none'/, path + ' missing frame protection');
   }
 });
+
+
+test('staging location endpoint serves a harmless empty lookup', async () => {
+  const url = 'https://' + stagingProject + '.supabase.co/functions/v1/m-commerce-location?action=search&q=ab';
+  const response = await fetch(url, { signal: AbortSignal.timeout(15000) });
+  assert.equal(response.status, 200, 'location function missing or unhealthy');
+  const body = await response.json();
+  assert.equal(body.ok, true);
+  assert.deepEqual(body.results, []);
+});
+
+test('staging checkout rejects malformed orders without writing to production', async () => {
+  const url = 'https://' + stagingProject + '.supabase.co/functions/v1/simple-checkout';
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', origin: base },
+    body: JSON.stringify({ site_id: 'invalid', checkout_attempt_id: 'invalid' }),
+    signal: AbortSignal.timeout(15000)
+  });
+  assert.equal(response.status, 422, 'invalid checkout must be rejected by the staging handler');
+  const body = await response.json();
+  assert.equal(body.error, 'INVALID_REQUEST');
+});
