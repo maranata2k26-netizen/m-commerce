@@ -60,3 +60,17 @@ test('edge code does not embed credentials or production service-role JWTs', () 
     assert.doesNotMatch(code, /eyJhbGciOiJ[A-Za-z0-9_-]{100,}/, name);
   }
 });
+
+
+test('platform billing refuses a connected merchant account before requesting a subscription', () => {
+  const source = fn('j3-billing');
+  const collector = source.split('async function collectorToken')[1]?.split('async function syncPreapproval')[0] || '';
+  assert.match(collector, /J3_BILLING_IDENTITY_NOT_CONFIRMED/);
+  assert.match(collector, /confirmed_at/);
+  assert.match(collector, /account_email/);
+  assert.match(collector, /expected_email/);
+  assert.match(collector, /from\('mercadopago_connections'\)/);
+  assert.match(collector, /eq\('mp_user_id',String\(a\.mp_user_id\)\)/);
+  assert.match(collector, /eq\('status','connected'\)/);
+  assert.match(collector, /MP_ACCOUNT_ALREADY_USED/);
+});
