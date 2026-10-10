@@ -17,7 +17,7 @@ jobs:
         with:
           deno-version: v2.x
       - name: Validate browser JavaScript
-        run: node --check simple/simple.js && node --check simple/simple-bootstrap.js && node --check simple/simple-enhancements-v2.js
+        run: for script in simple/*.js; do node --check "$script" || exit 1; done
       - name: Validate staging/production client isolation
         run: node --test scripts/frontend-environment.test.cjs
       - name: Validate Vercel config
