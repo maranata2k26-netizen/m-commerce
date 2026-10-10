@@ -15,7 +15,7 @@ const configAt = hostname => {
 };
 
 test('staging, previews and localhost use ONLY the isolated Supabase project', () => {
-  for (const host of ['m-commerce-staging.vercel.app', 'm-commerce-staging-git-fix-123.vercel.app', 'localhost', '127.0.0.1']) {
+  for (const host of ['m-commerce-staging.vercel.app', 'm-commerce-staging-git-fix-123.vercel.app', 'm-commerce-git-fix-branch-maranata3.vercel.app', 'm-commerce-abc123xyz-maranata3.vercel.app', 'm-commerce-staging-abc123xyz-maranata3.vercel.app', 'localhost', '127.0.0.1']) {
     const cfg = configAt(host);
     assert.equal(cfg.M_COMMERCE_IS_STAGING, true, host);
     assert.equal(cfg.M_COMMERCE_SUPABASE_URL, 'https://jcgvunffeskkbgsbomgy.supabase.co', host);
@@ -25,7 +25,7 @@ test('staging, previews and localhost use ONLY the isolated Supabase project', (
 });
 
 test('production origins continue to use the original production Supabase project', () => {
-  for (const host of ['mcommerce.vercel.app', 'm-commerce-ar.vercel.app', 'merchant.example.com']) {
+  for (const host of ['mcommerce.vercel.app', 'm-commerce-ar.vercel.app', 'm-commerce-maranata3.vercel.app', 'merchant.example.com']) {
     const cfg = configAt(host);
     assert.equal(cfg.M_COMMERCE_IS_STAGING, false, host);
     assert.equal(cfg.M_COMMERCE_SUPABASE_URL, 'https://kjoixhzaxopdbmudzfsg.supabase.co', host);
