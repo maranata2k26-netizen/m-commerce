@@ -35,6 +35,7 @@ test('platform billing confirmation checks recipient identity and merchant confl
   assert.match(code, /MP_ACCOUNT_ALREADY_USED/);
   assert.match(code, /ADMIN_REQUIRED/);
   assert.match(code, /expected_email/);
+  assert.match(fn('mercadopago-connect'), /billingUsage/);
 });
 
 test('subscription payment webhooks fail closed without a valid signature', () => {
