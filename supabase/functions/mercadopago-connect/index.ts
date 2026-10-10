@@ -6,7 +6,7 @@ const SERVICE_ROLE=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")??"";
 const ANON=Deno.env.get("SUPABASE_ANON_KEY")??"";
 const CLIENT_ID=(Deno.env.get("MERCADOPAGO_CLIENT_ID")??"").trim();
 const CLIENT_SECRET=(Deno.env.get("MERCADOPAGO_CLIENT_SECRET")??"").trim();
-const PUBLIC_URL="https://mcommerce.vercel.app";
+const PUBLIC_URL=(SUPABASE_URL.replace(/\/+$/,"")==="https://jcgvunffeskkbgsbomgy.supabase.co"?"https://m-commerce-staging.vercel.app":(Deno.env.get("M_COMMERCE_PUBLIC_ORIGIN")||"https://mcommerce.vercel.app")).replace(/\/+$/,"");
 const OLD_PUBLIC_URL="https://m-commerce-ar.vercel.app";
 const LEGACY_PUBLIC_URL="https://j3-plataform.vercel.app";
 const CALLBACK=`${SUPABASE_URL}/functions/v1/mercadopago-connect`;
