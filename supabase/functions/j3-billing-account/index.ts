@@ -7,7 +7,7 @@ function b64url(b:Uint8Array){return btoa(String.fromCharCode(...b)).replace(/\+
 async function sha256(s:string){return new Uint8Array(await crypto.subtle.digest("SHA-256",new TextEncoder().encode(s)))}
 function random(n=48){return b64url(crypto.getRandomValues(new Uint8Array(n)))}
 function safeError(e:unknown){if(e instanceof Error&&KNOWN.has(e.message))return e.message;const x=e as Record<string,unknown>|null;const c=String(x?.message||x?.code||"");return KNOWN.has(c)?c:"INTERNAL_ERROR"}
-function cors(req:Request){const o=req.headers.get("origin");const allowed=o===PUBLIC_URL||o===LEGACY_PUBLIC_URL;return {"Access-Control-Allow-Origin":allowed?o:PUBLIC_URL,"Access-Control-Allow-Headers":"authorization, apikey, content-type","Access-Control-Allow-Methods":"POST,OPTIONS","Vary":"Origin"}}
+function cors(req:Request){const o=req.headers.get("origin");const allowed=o===PUBLIC_URL||o===LEGACY_PUBLIC_URL;return {"Access-Control-Allow-Origin":allowed&&o?o:PUBLIC_URL,"Access-Control-Allow-Headers":"authorization, apikey, content-type","Access-Control-Allow-Methods":"POST,OPTIONS","Vary":"Origin"}}
 function json(req:Request,b:unknown,status=200){return new Response(JSON.stringify(b),{status,headers:{...cors(req),"content-type":"application/json","cache-control":"no-store"}})}
 function email(v:unknown){return String(v??"").trim().toLowerCase()}
 function validEmail(v:string){return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)}
