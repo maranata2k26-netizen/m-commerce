@@ -86,3 +86,14 @@ test('Simple CSP lets staging reach its own API and Storage, without opening scr
 test('landing does not invent a number of active customer shops', () => {
   assert.doesNotMatch(read('simple/simple.js'), /Más de 150 tiendas funcionando/);
 });
+
+
+test('staging bootstrap never enters the production-only PRO runtime', () => {
+  const html = read('bootstrap.html');
+  const check = html.indexOf('if(STAGING){');
+  const runtimeFetch = html.indexOf('async function load(){');
+  assert.ok(check > 0 && runtimeFetch > check, 'staging guard must execute first');
+  assert.match(html, /m-commerce-staging\.vercel\.app\/simple/);
+  assert.match(html, /if\(STAGING\)\{\s*const keepQuery=/);
+  assert.match(html, /location\.replace\('https:\/\/m-commerce-staging\.vercel\.app\/simple'/);
+});
