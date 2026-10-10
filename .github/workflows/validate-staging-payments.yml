@@ -1,0 +1,42 @@
+name: Validate M Commerce staging payments
+on:
+  push:
+    branches:
+      - improvement/staging-billing-complete-20261010
+    paths:
+      - '.github/workflows/validate-staging-payments.yml'
+      - 'scripts/billing-contract.test.cjs'
+      - 'supabase/functions/**'
+  pull_request:
+    paths:
+      - '.github/workflows/validate-staging-payments.yml'
+      - 'scripts/billing-contract.test.cjs'
+      - 'supabase/functions/**'
+jobs:
+  payment-contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check billing integration contracts (no secrets or external payments)
+        run: node --test scripts/billing-contract.test.cjs
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Typecheck all staging Edge Functions
+        run: |
+          set -euo pipefail
+          for function in \
+            j3-billing j3-billing-account j3-billing-webhook \
+            checkout-create mercadopago-connect mercadopago-webhook \
+            platform-admin simple-checkout simple-pro-lead simple-consumer-request
+          do
+            deno check "supabase/functions/$function/index.ts"
+          done
+      - name: Check existing Simple browser JS
+        run: |
+          node --check simple/simple.js
+          node --check simple/simple-bootstrap.js
+          node --check simple/simple-enhancements-v2.js
