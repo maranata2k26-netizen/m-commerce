@@ -6,6 +6,7 @@ on:
     paths:
       - "simple/**"
       - "scripts/frontend-environment.test.cjs"
+      - "scripts/staging-live-smoke.test.cjs"
       - "supabase/**"
       - "vercel.json"
 jobs:
@@ -20,6 +21,8 @@ jobs:
         run: for script in simple/*.js; do node --check "$script" || exit 1; done
       - name: Validate staging/production client isolation
         run: node --test scripts/frontend-environment.test.cjs
+      - name: Smoke-test live staging origin (read-only HTTP)
+        run: node --test scripts/staging-live-smoke.test.cjs
       - name: Validate Vercel config
         run: node -e "JSON.parse(require('fs').readFileSync('vercel.json','utf8'))"
       - name: Type-check Edge Functions

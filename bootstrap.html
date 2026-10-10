@@ -17,6 +17,14 @@
     const OFFICIAL='https://mcommerce.vercel.app';
     const RUNTIME='https://kjoixhzaxopdbmudzfsg.supabase.co/functions/v1/j3-runtime';
     const p=location.pathname.replace(/\/+$/,'')||'/';
+    const hostname=String(location.hostname||"").toLowerCase();
+    const STAGING=hostname==="localhost"||hostname==="127.0.0.1"||hostname==="m-commerce-staging.vercel.app"||/^(?:m-commerce|mcommerce|m-commerce-staging)-git-[a-z0-9-]+\.vercel\.app$/.test(hostname)||/^(?:m-commerce|mcommerce|m-commerce-staging)-[a-z0-9]{9}-maranata3\.vercel\.app$/.test(hostname);
+    // El runtime PRO todavía depende de producción: no cargarlo nunca en staging.
+    if(STAGING){
+      const keepQuery=p==='/'||p==='/index.html';
+      location.replace('https://m-commerce-staging.vercel.app/simple'+(keepQuery?location.search+location.hash:''));
+      return;
+    }
 
     // La web pública oficial de M Commerce es Simple. El runtime histórico queda sólo para paneles internos.
     if(p==='/'||p==='/index.html'){

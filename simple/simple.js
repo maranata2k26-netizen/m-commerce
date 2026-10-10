@@ -63,7 +63,7 @@ function landing(){
  <section class="social-proof" aria-label="Experiencia M Commerce">
    <div class="section-intro center">
      <div class="eyebrow">Experiencia M Commerce</div>
-     <h2>Más de 150 tiendas funcionando.</h2>
+     <h2>Tu próxima tienda empieza acá.</h2>
      <p>Una plataforma pensada para que vender online sea simple, rápido y ordenado.</p>
    </div>
    <div class="testimonial-grid">
