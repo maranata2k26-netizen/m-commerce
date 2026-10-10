@@ -64,6 +64,8 @@ Deno.serve(async(req)=>{
    const token=await exchangeCode(code,found.data.code_verifier);
    const profile=await mpProfile(String(token.access_token));
    const mpUserId=String(token.user_id||profile.id||"");if(!mpUserId)throw new Error("NO_MP_USER");
+   const billingUsage=await admin.from("platform_billing_accounts").select("provider").eq("mp_user_id",mpUserId).in("status",["connected","pending_confirmation"]).limit(1).maybeSingle();
+   if(billingUsage.error)throw billingUsage.error;if(billingUsage.data)return redirect(target(callbackFlow,false,"account_in_use"));
    const duplicate=await admin.from("mercadopago_connections").select("site_id").eq("mp_user_id",mpUserId).eq("status","connected").neq("site_id",found.data.site_id).limit(1).maybeSingle();
    if(duplicate.error)throw duplicate.error;if(duplicate.data)return redirect(target(callbackFlow,false,"account_in_use"));
    const expires=token.expires_in?new Date(Date.now()+Number(token.expires_in)*1000).toISOString():null;
