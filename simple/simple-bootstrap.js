@@ -1,6 +1,6 @@
 (()=>{"use strict";
 const OFFICIAL_ORIGIN=String(window.M_COMMERCE_OFFICIAL_ORIGIN||"https://m-commerce-ar.vercel.app").replace(/\/+$/,"");
-const PROJECT_URL="https://kjoixhzaxopdbmudzfsg.supabase.co";
+const PROJECT_URL=window.M_COMMERCE_SUPABASE_URL;
 const PREVIEW=new URLSearchParams(location.search).get("preview")==="1";
 const DEVICE=new URLSearchParams(location.search).get("device")||"desktop";
 let client=null;
@@ -95,7 +95,7 @@ async function startBilling(siteId){
   if(!session)throw new Error("Tu sesión venció. Volvé a ingresar.");
   const res=await fetch(PROJECT_URL+"/functions/v1/j3-billing",{
     method:"POST",
-    headers:{"content-type":"application/json","apikey":"sb_publishable_G9dKTg3ev1183qjfVkqMXg_kp5WDPaq","authorization":"Bearer "+session.access_token},
+    headers:{"content-type":"application/json","apikey":window.M_COMMERCE_SUPABASE_KEY,"authorization":"Bearer "+session.access_token},
     body:JSON.stringify({action:"subscription_create",site_id:siteId,return_path:"/simple/app?billing_return=1&publish_after_billing=1"})
   });
   const out=await res.json();
