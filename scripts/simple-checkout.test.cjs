@@ -56,7 +56,7 @@ function harness(options={}){
   crypto:{randomUUID:()=>{ids++;return '123e4567-e89b-42d3-a456-'+String(ids).padStart(12,'0');}},
   fetch:async(url,init)=>{const body=JSON.parse(init.body);requests.push(body);if(failCalls-->0)throw Error('Simulated temporary connection failure');return {ok:true,json:async()=>({order:{id:'ok'},kind:'whatsapp',whatsapp_url:null})}},
   setBusy:(button,on)=>{if(button)button.disabled=on;},fail:e=>errors.push(String(e.message||e)),toast:x=>notices.push(x),
-  setTimeout:()=>{},location:{href:''},console:{warn(){}}
+  setTimeout:()=>{},location:{href:'',search:options.returnQuery||''},URLSearchParams,console:{warn(){}}
  };
  vm.runInNewContext(snippet,context,{timeout:2000});
  return{
@@ -149,6 +149,17 @@ test('webshop WhatsApp links normalize local Argentine mobile numbers',()=>{
  assert.equal(scope.merchantWhatsAppNumber('11 6276-0623'),'5491162760623');
  assert.equal(scope.merchantWhatsAppNumber('+54 9 11 6276-0623'),'5491162760623');
  assert.equal(scope.merchantWhatsAppNumber('+54 11 6276-0623'),'5491162760623');
+});
+
+test('Mercado Pago returns display neutral verification, never false approval',async()=>{
+ const h=harness({returnQuery:'?payment=success&order=fake'});
+ await h.init();
+ assert.match(h.app.innerHTML,/Tu pago se está verificando/);
+ assert.doesNotMatch(h.app.innerHTML,/Pago aprobado/);
+ const pending=harness({returnQuery:'?payment=pending'});await pending.init();
+ assert.match(pending.app.innerHTML,/pendiente de confirmación/);
+ const untrusted=harness({returnQuery:'?payment=forged'});await untrusted.init();
+ assert.doesNotMatch(untrusted.app.innerHTML,/Estado del pago/);
 });
 
 test('offline checkout database refuses to change payment method when replayed',()=>{
