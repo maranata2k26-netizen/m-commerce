@@ -19,7 +19,10 @@ function variantSerializer(){
 }
 function variantRow(previous,overrides={}){
  const values={'.mc-v-stock':'3','.mc-v-name':'Talle 42 - nuevo nombre','.mc-v-price':'50',...overrides};
- return {_mcExistingVariant:previous,querySelector:(selector)=>({value:values[selector]})};
+ return {_mcExistingVariant:previous,querySelector:(selector)=>({
+   value:values[selector],
+   checked:selector==='.mc-v-available'?(Object.hasOwn(overrides,selector)?Boolean(overrides[selector]):previous?.available!==false):false
+ })};
 }
 
 test('renaming an existing variant retains its exact UUID, metadata and stock concurrency snapshot',()=>{
@@ -48,6 +51,15 @@ test('editing a sold-out variant does not silently reactivate it',()=>{
  assert.equal(payload.stock_quantity,0);
 });
 
+test('merchants may explicitly reactivate a restocked variant without changing its ID',()=>{
+ const previous={id:'123e4567-e89b-42d3-a456-426614174001',stock_tracking:true,stock_quantity:0,available:false,attributes:{}};
+ const restored=variantSerializer()(variantRow(previous,{'.mc-v-stock':'4','.mc-v-available':true}),0);
+ assert.equal(restored.id,previous.id);
+ assert.equal(restored.expected_stock_quantity,0);
+ assert.equal(restored.stock_quantity,4);
+ assert.equal(restored.available,true);
+});
+
 test('the stock editor rejects malformed quantities before any product RPC',()=>{
  const serialize=variantSerializer();
  for(const stock of ['abc','-1','1.5','1e3']){
@@ -64,6 +76,8 @@ test('only active variants are loaded and failures are not masked by empty data'
  assert.match(enhancements,/if\(variantsResult\.error\)throw variantsResult\.error/);
  assert.match(enhancements,/row\._mcExistingVariant=variant\?\.id/);
  assert.match(enhancements,/variants:variantContext\.variants\.map/);
+ assert.match(enhancements,/form\.addEventListener\("submit",event=>/);
+ assert.match(enhancements,/event\.stopImmediatePropagation\(\)/);
 });
 
 test('products keep free/zero prices, reject empty categories, and reject stale stock updates',()=>{
