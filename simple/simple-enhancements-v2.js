@@ -36,9 +36,10 @@
     return {
       ...(previous?.id?{
         id:previous.id,attributes:previous.attributes||{},
-        sku:previous.sku||null,available:previous.available!==false,
+        sku:previous.sku||null,
         ...(previous.stock_tracking?{expected_stock_quantity:previous.stock_quantity}:{}),
       }:{attributes:{}}),
+      available:row.querySelector(".mc-v-available").checked,
       name:row.querySelector(".mc-v-name").value.trim(),
       price_delta:priceDelta,
       stock_tracking:stock!=="",
@@ -90,8 +91,8 @@
       .mc-color-input{display:grid;grid-template-columns:46px 1fr;gap:9px;align-items:center}.mc-color-input input[type=color]{padding:2px;min-height:46px;width:46px}
       .mc-preview-links{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.mc-design-panel .mc-preset-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
       .mc-danger-mini{border:1px solid #f1c6cc;background:#fff;color:#b42334;border-radius:9px;padding:8px 10px;font-weight:800}
-      .mc-variant-editor{margin:16px 0;border-top:1px solid var(--line);padding-top:16px}.mc-variant-row{display:grid;grid-template-columns:minmax(150px,1fr) 120px 120px auto;gap:8px;align-items:end;margin:8px 0}
-      .mc-variant-row label{display:grid;gap:5px;font-size:11px;font-weight:800;color:var(--muted)}.mc-variant-row input{border:1px solid #ccd3dd;border-radius:10px;padding:10px;min-width:0}
+      .mc-variant-editor{margin:16px 0;border-top:1px solid var(--line);padding-top:16px}.mc-variant-row{display:grid;grid-template-columns:minmax(150px,1fr) 110px 110px 105px auto;gap:8px;align-items:end;margin:8px 0}
+      .mc-variant-row label{display:grid;gap:5px;font-size:11px;font-weight:800;color:var(--muted)}.mc-variant-row input{border:1px solid #ccd3dd;border-radius:10px;padding:10px;min-width:0}.mc-variant-row input[type=checkbox]{width:18px;height:18px;min-height:18px;padding:0;margin:10px 0 7px}
       .mc-product-tech{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:12px 0}.mc-product-tech .field{margin:0}
       .mc-instagram-link{display:inline-flex;margin-top:8px;color:inherit;font-weight:800;text-decoration:none;opacity:.9}
       .mc-enhancement-toast{position:fixed;z-index:100000;left:50%;bottom:22px;transform:translate(-50%,120px);background:#0b1220;color:#fff;padding:12px 16px;border-radius:12px;box-shadow:0 16px 40px rgba(0,0,0,.25);transition:.2s;max-width:90vw}
@@ -434,8 +435,17 @@
     }
 
     const rows=holder.querySelector("#mc-variant-rows");
+    let variantValidationError="";
     const sync=()=>{
-      const values=[...rows.querySelectorAll(".mc-variant-row")].map(variantPayloadFromRow).filter(value=>value.name);
+      let values;
+      try{
+        values=[...rows.querySelectorAll(".mc-variant-row")].map(variantPayloadFromRow).filter(value=>value.name);
+        variantValidationError="";
+      }catch(error){
+        variantValidationError=error instanceof Error?error.message:String(error);
+        variantContext=null;
+        return;
+      }
       variantContext={siteId:id,productId:editingProductId||null,variants:values};
       textarea.value=values.map(value=>`${value.name} | ${value.price_delta}`).join("\n");
       productExtras=technical?{
@@ -445,12 +455,21 @@
       }:null;
     };
 
+    form.addEventListener("submit",event=>{
+      sync();
+      if(variantValidationError){
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        notify(variantValidationError,true);
+      }
+    },true);
+
     const addVariant=(variant={})=>{
       const row=document.createElement("div");
       row.className="mc-variant-row";
       row._mcExistingVariant=variant?.id?{...variant}:null;
       const placeholder=rubro==="Zapatillas"?"Talle 40":rubro==="Ropa"?"Talle M · Negro":rubro==="Ferretería"?"Medida 20 mm":"Opción";
-      row.innerHTML=`<label>Variante<input class="mc-v-name" value="${esc(variant.name||"")}" placeholder="${esc(placeholder)}"></label><label>Adicional $<input class="mc-v-price" type="number" step="0.01" value="${Number(variant.price_delta||0)}"></label><label>Stock<input class="mc-v-stock" type="number" min="0" step="1" value="${variant.stock_tracking&&variant.stock_quantity!=null?Number(variant.stock_quantity):""}" placeholder="Opcional"></label><button type="button" class="mc-danger-mini mc-v-remove">Quitar</button>`;
+      row.innerHTML=`<label>Variante<input class="mc-v-name" value="${esc(variant.name||"")}" placeholder="${esc(placeholder)}"></label><label>Adicional $<input class="mc-v-price" type="number" step="0.01" value="${Number(variant.price_delta||0)}"></label><label>Stock<input class="mc-v-stock" type="number" min="0" step="1" value="${variant.stock_tracking&&variant.stock_quantity!=null?Number(variant.stock_quantity):""}" placeholder="Opcional"></label><label>Disponible<input class="mc-v-available" type="checkbox" ${variant.available!==false?"checked":""}></label><button type="button" class="mc-danger-mini mc-v-remove">Quitar</button>`;
       rows.appendChild(row);
       row.querySelector(".mc-v-remove").onclick=()=>{row.remove();sync();};
       row.querySelectorAll("input").forEach(input=>input.addEventListener("input",sync));
