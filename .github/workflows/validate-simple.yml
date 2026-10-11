@@ -7,6 +7,7 @@ on:
       - "simple/**"
       - "scripts/frontend-environment.test.cjs"
       - "scripts/auth-flow.test.cjs"
+      - "scripts/simple-onboarding.test.cjs"
       - "scripts/staging-live-smoke.test.cjs"
       - "supabase/**"
       - "vercel.json"
@@ -20,6 +21,8 @@ jobs:
           deno-version: v2.x
       - name: Validate browser JavaScript
         run: for script in simple/*.js; do node --check "$script" || exit 1; done
+      - name: Validate Simple onboarding, draft URLs and retry safety
+        run: node --test scripts/simple-onboarding.test.cjs
       - name: Validate registration, email confirmation and recovery flows
         run: node --test scripts/auth-flow.test.cjs
       - name: Validate staging/production client isolation
