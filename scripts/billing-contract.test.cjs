@@ -74,3 +74,32 @@ test('platform billing refuses a connected merchant account before requesting a 
   assert.match(collector, /eq\('status','connected'\)/);
   assert.match(collector, /MP_ACCOUNT_ALREADY_USED/);
 });
+
+test('platform OAuth callback refuses connected merchant identity before saving billing account', () => {
+  const src = fn('mercadopago-connect');
+  const platformFlow = src.split('if(callbackFlow==="platform_billing"){')[1]?.split('if(!await canManageMerchant')[0] || '';
+  assert.match(platformFlow, /from\("mercadopago_connections"\)/);
+  assert.match(platformFlow, /merchantUsage\.data/);
+  assert.match(platformFlow, /account_in_use/);
+  assert.ok(platformFlow.indexOf('merchantUsage.data') < platformFlow.indexOf('.upsert({provider:"mercadopago"'));
+});
+
+test('subscription webhook checks collector identity and merchant collision before applying a payment', () => {
+  const src = fn('j3-billing-webhook');
+  const account = src.split('async function account')[1]?.split('async function token')[0] || '';
+  assert.match(account, /J3_BILLING_IDENTITY_NOT_CONFIRMED/);
+  assert.match(account, /from\('mercadopago_connections'\)/);
+  assert.match(account, /MP_ACCOUNT_ALREADY_USED/);
+});
+
+test('admin billing account status reports existing identity collision rather than claiming ready', () => {
+  const src = fn('j3-billing-account');
+  const statusFlow = src.split('if(action==="account_status")')[1]?.split('if(action==="account_start")')[0] || '';
+  assert.match(statusFlow, /account_conflict:conflict/);
+  assert.match(statusFlow, /connected:a\.status==="connected"&&!conflict/);
+});
+
+test('staging checkout cannot use legacy merchant token even if legacy site id is supplied', () => {
+  const src = fn('checkout-create');
+  assert.match(src, /if\(!IS_STAGING&&siteId===LEGACY_SITE_ID&&LEGACY_MP_TOKEN\)/);
+});
