@@ -110,7 +110,7 @@ function setupOrdersPanel(){
    };
   }
  };
- const ctx={sb:supabase,esc:x=>String(x),money:v=>'
+ const ctx={sb:supabase,esc:x=>String(x),money:v=>'$'+v,document:{getElementById:id=>id==='refresh-orders'?refreshButton:null},
   rpc:async(name,arg)=>{calls.push({name,arg});if(failNext){failNext=false;throw Error('PAYMENT_NOT_APPROVED')}return{status:arg.p_status}},
   fail:e=>errors.push(e.message),toast:x=>notices.push(x),Date};
  vm.runInNewContext(frontend.slice(start,end),ctx,{timeout:1000});
