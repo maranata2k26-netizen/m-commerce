@@ -319,6 +319,12 @@ function subscriptionGate(site,sub={}){app.innerHTML=`<div class="app-shell"><he
 function planPanel(panel,siteId,sub){panel.innerHTML=`<div class="card"><h2>Mi plan</h2><div class="price">${money(sub?.amount||0,sub?.currency_code||"ARS")} <small>/ mes</small></div><p>Estado: <strong>${esc(sub?.status||"pending")}</strong></p><button id="subscribe" class="btn brand">Administrar suscripción</button></div>`;document.getElementById("subscribe").onclick=ev=>startSubscription(siteId,ev.currentTarget)}
 async function wizard(siteId,step=1,dash=null){
  dash=dash||await rpc("simple_dashboard",{p_site_id:siteId});const st=dash.settings||{},state={business_name:st.business_name||"",business_category:st.business_category||"",whatsapp_number:st.whatsapp_number||"",address:st.address||"",schedule:st.schedule||"",logo_url:st.logo_url||"",cover_url:st.cover_url||"",fulfillment_config:st.fulfillment_config||{pickup_enabled:true,shipping_enabled:false},payment_methods:st.payment_methods||{cash:true,transfer:true,mercadopago:false}};let current=Math.max(1,Math.min(10,step));
+ const canEditSlug=dash.site?.status==="draft";
+ let slug=String(dash.site?.slug||""),slugTouched=false;
+ const hasGeneratedSlug=canEditSlug&&/^tienda-[0-9a-f]{12}(?:-[0-9a-f]{6})?$/.test(slug);
+ if(hasGeneratedSlug)slug=slugify(state.business_name).slice(0,60);
+ let hasCategory=Number(dash.counts?.categories||0)>0;
+ let hasProduct=Number(dash.counts?.products||0)>0;
  const render=()=>{const content=[
   ["Nombre del comercio",field("w_name","¿Cómo se llama tu comercio?","text",state.business_name,"required")],
   ["Logo y portada",`<div class="upload-grid"><div class="field"><label for="w_logo">Logo del comercio</label>${state.logo_url?`<img class="upload-preview logo-preview" src="${esc(state.logo_url)}" alt="Logo actual">`:""}<input id="w_logo" type="file" accept="image/jpeg,image/png,image/webp,image/avif"><span class="hint">JPG, PNG, WebP o AVIF · máx. 8 MB.</span></div><div class="field"><label for="w_cover">Imagen de portada</label>${state.cover_url?`<img class="upload-preview cover-preview" src="${esc(state.cover_url)}" alt="Portada actual">`:""}<input id="w_cover" type="file" accept="image/jpeg,image/png,image/webp,image/avif"><span class="hint">Se muestra arriba de tu tienda.</span></div></div>`],
