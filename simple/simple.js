@@ -339,9 +339,18 @@ async function wizard(siteId,step=1,dash=null){
  ][current-1];
  app.innerHTML=`<div class="app-shell"><header class="app-head"><div class="inner"><span class="brand">M COMMERCE <small>SIMPLE</small></span><button id="logout" class="mini">Salir</button></div></header><main class="app-main"><form id="wizard" class="card wizard"><div class="eyebrow">Paso ${current} de 10</div><div class="progress"><div style="width:${current*10}%"></div></div><section class="wizard-step"><h2>${content[0]}</h2>${content[1]}</section><div class="wizard-actions"><button class="btn secondary" type="button" id="back" ${current===1?"disabled":""}>Atrás</button><button class="btn brand" type="submit">${current===10?"Terminar":"Continuar"}</button></div></form></main></div>`;
  document.getElementById("logout").onclick=logout;document.getElementById("back").onclick=()=>{current--;render()};
+ if(current===1&&canEditSlug){
+   const nameInput=document.getElementById("w_name"),slugInput=document.getElementById("w_slug"),preview=document.getElementById("w_slug_preview");
+   nameInput.oninput=()=>{if(hasGeneratedSlug&&!slugTouched){slug=slugify(nameInput.value).slice(0,60);slugInput.value=slug;preview.textContent=slug||"tu-tienda";}};
+   slugInput.oninput=()=>{slugTouched=true;slug=slugify(slugInput.value).slice(0,60);slugInput.value=slug;preview.textContent=slug||"tu-tienda";};
+ }
  document.querySelectorAll(".fulfillment,.payment").forEach(b=>b.onclick=()=>{const target=b.classList.contains("payment")?state.payment_methods:state.fulfillment_config;target[b.dataset.k]=!target[b.dataset.k];b.classList.toggle("selected",target[b.dataset.k])});
  document.getElementById("wizard").onsubmit=async ev=>{ev.preventDefault();try{setBusy(ev.submitter,true);
-  if(current===1)state.business_name=document.getElementById("w_name").value.trim();
+  if(current===1){
+   state.business_name=document.getElementById("w_name").value.trim();
+   if(state.business_name.length<2||state.business_name.length>100)throw new Error("El nombre debe tener entre 2 y 100 caracteres.");
+   if(canEditSlug){slug=String(document.getElementById("w_slug").value||"").trim().toLowerCase();if(slug.length<3||slug.length>60||!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(slug))throw new Error("El enlace debe tener de 3 a 60 caracteres: letras, números y guiones.");}
+ }
   if(current===2){const logo=document.getElementById("w_logo").files[0],cover=document.getElementById("w_cover").files[0];if(logo)state.logo_url=await upload(siteId,logo,"brand");if(cover)state.cover_url=await upload(siteId,cover,"cover")}
   if(current===3)state.business_category=document.getElementById("w_category").value.trim();
   if(current===4)state.whatsapp_number=document.getElementById("w_phone").value.trim();
@@ -349,9 +358,9 @@ async function wizard(siteId,step=1,dash=null){
   if(current===6&&!state.fulfillment_config.pickup_enabled&&!state.fulfillment_config.shipping_enabled)throw new Error("Elegí retiro, delivery o ambas modalidades.");
   if(current===7&&!Object.values(state.payment_methods).some(Boolean))throw new Error("Elegí al menos un método de pago.");
   if(current===8)state.schedule=document.getElementById("w_schedule").value.trim();
-  if(current===9)await rpc("simple_upsert_category",{p_site_id:siteId,p_category:{name:document.getElementById("w_first_category").value.trim(),active:true}});
+  if(current===9&&!hasCategory){await rpc("simple_upsert_category",{p_site_id:siteId,p_category:{name:document.getElementById("w_first_category").value.trim(),active:true}});hasCategory=true;}
   if(current===10){const {data:cats}=await sb.from("product_categories").select("id,name").eq("site_id",siteId).eq("active",true).order("created_at").limit(1);let image_url="";const f=document.getElementById("w_product_image").files[0];if(f)image_url=await upload(siteId,f,"products");await rpc("simple_upsert_product",{p_site_id:siteId,p_product:{name:document.getElementById("w_product_name").value.trim(),price:Number(document.getElementById("w_product_price").value),category_id:cats?.[0]?.id||null,category:cats?.[0]?.name||"Productos",image_url,active:true}});const done=await rpc("simple_complete_onboarding",{p_site_id:siteId});if(!done.ready)throw new Error("Falta completar: "+done.missing.join(", "));toast("Tu tienda está lista.");const sites=await rpc("platform_my_sites");return dashboard((Array.isArray(sites)?sites:sites.sites).find(x=>x.id===siteId))}
-  await rpc("simple_save_store_profile",{p_site_id:siteId,p_profile:{...state,onboarding_step:Math.min(10,current+1)}});current++;render();
+  await rpc("simple_save_store_profile",{p_site_id:siteId,p_profile:{...state,onboarding_step:Math.min(10,current+1)}});if(current===1&&canEditSlug){const saved=await rpc("simple_set_draft_slug",{p_site_id:siteId,p_slug:slug});dash.site.slug=saved.slug;}current++;render();
  }catch(e){fail(e)}finally{setBusy(ev.submitter,false)}};
  };render();
 }
