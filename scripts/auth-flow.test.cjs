@@ -40,7 +40,7 @@ function isolate(start,end,options={}){
  vm.runInNewContext(code.slice(a,b),context,{timeout:1500});
  return{context,controls,fields,actions,calls,store};
 }
-const ev=()=>({preventDefault(){},submitter:{disabled:false},currentTarget:{}});
+const ev=()=>({preventDefault(){},submitter:{disabled:false,dataset:{},textContent:'Enviar'},currentTarget:{}});
 
 test('obsolete account enumeration monkeypatch is not loaded',()=>{
  assert.doesNotMatch(html,/src="\/simple\/simple-auth-fixes\.js/);
