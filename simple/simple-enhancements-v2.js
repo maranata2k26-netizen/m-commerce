@@ -389,8 +389,9 @@
     let extra={brand:"",attributes:{}};
 
     if(editingProductId){
-      const variantsResult=await client.from("product_variants").select("id,name,price_delta,stock_tracking,stock_quantity,attributes,sort_order,available,sku").eq("site_id",id).eq("product_id",editingProductId).order("sort_order");
-      if(!variantsResult.error)variants=variantsResult.data||[];
+      const variantsResult=await client.from("product_variants").select("id,name,price_delta,stock_tracking,stock_quantity,attributes,sort_order,available,sku").eq("site_id",id).eq("product_id",editingProductId).eq("active",true).order("sort_order");
+      if(variantsResult.error)throw variantsResult.error;
+      variants=variantsResult.data||[];
       const productResult=await client.from("products").select("brand,attributes").eq("site_id",id).eq("id",editingProductId).maybeSingle();
       if(!productResult.error&&productResult.data)extra=productResult.data;
     }
