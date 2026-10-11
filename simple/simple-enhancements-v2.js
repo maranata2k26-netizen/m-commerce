@@ -24,6 +24,28 @@
   let storefrontApplied=false;
 
   const esc=value=>String(value??"").replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[char]));
+  // Keep the original variant ID and inventory snapshot on every edit.
+  // This is what prevents a renamed size/color from becoming a new stock record.
+  function variantPayloadFromRow(row,index){
+    const previous=row._mcExistingVariant||null;
+    const stock=row.querySelector(".mc-v-stock").value;
+    const priceValue=row.querySelector(".mc-v-price").value;
+    const priceDelta=Number(priceValue||0);
+    if(!Number.isFinite(priceDelta))throw new Error("Ingresá un adicional válido para la variante.");
+    if(stock!==""&&(!/^\\d+$/.test(stock)||!Number.isSafeInteger(Number(stock))||Number(stock)<0))throw new Error("El stock de una variante debe ser un número entero no negativo.");
+    return {
+      ...(previous?.id?{
+        id:previous.id,attributes:previous.attributes||{},
+        sku:previous.sku||null,available:previous.available!==false,
+        ...(previous.stock_tracking?{expected_stock_quantity:previous.stock_quantity}:{}),
+      }:{attributes:{}}),
+      name:row.querySelector(".mc-v-name").value.trim(),
+      price_delta:priceDelta,
+      stock_tracking:stock!=="",
+      stock_quantity:stock===""?null:Number(stock),
+      sort_order:index
+    };
+  }
   const dash=()=>window.__mcSimpleActualDashboard||null;
   const simpleMeta=(value=dash())=>value?.settings?.site_design?.simple||{};
 
@@ -413,23 +435,7 @@
 
     const rows=holder.querySelector("#mc-variant-rows");
     const sync=()=>{
-      const values=[...rows.querySelectorAll(".mc-variant-row")].map((row,index)=>{
-        const stock=row.querySelector(".mc-v-stock").value;
-        return {
-          ...(row._mcExistingVariant?.id?{
-            id:row._mcExistingVariant.id,
-            attributes:row._mcExistingVariant.attributes||{},
-            sku:row._mcExistingVariant.sku||null,
-            available:row._mcExistingVariant.available!==false,
-            ...(row._mcExistingVariant.stock_tracking?{expected_stock_quantity:row._mcExistingVariant.stock_quantity}:{}),
-          }:{attributes:{}}),
-          name:row.querySelector(".mc-v-name").value.trim(),
-          price_delta:Number(row.querySelector(".mc-v-price").value||0),
-          stock_tracking:stock!=="",
-          stock_quantity:stock===""?null:Number(stock),
-          sort_order:index
-        };
-      }).filter(value=>value.name);
+      const values=[...rows.querySelectorAll(".mc-variant-row")].map(variantPayloadFromRow).filter(value=>value.name);
       variantContext={siteId:id,productId:editingProductId||null,variants:values};
       textarea.value=values.map(value=>`${value.name} | ${value.price_delta}`).join("\n");
       productExtras=technical?{
