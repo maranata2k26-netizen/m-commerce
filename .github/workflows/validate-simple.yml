@@ -9,6 +9,7 @@ on:
       - "scripts/auth-flow.test.cjs"
       - "scripts/simple-onboarding.test.cjs"
       - "scripts/simple-checkout.test.cjs"
+      - "scripts/simple-merchant-panel.test.cjs"
       - "scripts/staging-live-smoke.test.cjs"
       - "supabase/**"
       - "vercel.json"
@@ -22,6 +23,8 @@ jobs:
           deno-version: v2.x
       - name: Validate browser JavaScript
         run: for script in simple/*.js; do node --check "$script" || exit 1; done
+      - name: Validate merchant panel, inventory and order status handling
+        run: node --test scripts/simple-merchant-panel.test.cjs
       - name: Validate Simple checkout cart, order retry and inventory boundaries
         run: node --test scripts/simple-checkout.test.cjs
       - name: Validate Simple onboarding, draft URLs and retry safety
