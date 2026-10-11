@@ -45,7 +45,7 @@ test('subscription payment webhooks fail closed without a valid signature', () =
   assert.match(code, /validSignature\(req,dataId\)/);
   assert.match(code, /SUBSCRIPTION_CURRENCY_MISMATCH/);
   assert.match(code, /provider_subscription_id/);
-  assert.match(code, /ps==='pending'\?'pending'/);
+  assert.match(code, /ps==='authorized'\?\(hasApprovedPayment\?'active':'pending'\)/);
 });
 
 test('staging checkout cannot silently bill the legacy Maranata merchant for a missing store id', () => {
@@ -133,4 +133,43 @@ test('the migration defaults to deny-all and adds a single optional FK merchant 
   assert.match(sql, /allowed_shared_merchant_site_id uuid/i);
   assert.match(sql, /REFERENCES public\.sites\(id\)/i);
   assert.doesNotMatch(sql, /DEFAULT\s+['"0-9a-f-]+/i);
+});
+
+test('concurrent checkout creation is database-claimed and uses a persistent provider retry key', () => {
+  const code=fn('j3-billing');
+  assert.match(code,/platform_claim_subscription_attempt/);
+  assert.match(code,/SUBSCRIPTION_CREATION_IN_PROGRESS/);
+  assert.match(code, /x-idempotency-key':`j3-sub-\$\{siteId\}-\$\{attemptId\}`/);
+  assert.match(code,/provider_creation_attempt_id:null/);
+  assert.match(code,/last_paid_at:null/);
+});
+
+test('provider authorization alone never activates an unpaid subscription', () => {
+  for(const name of ['j3-billing','j3-billing-webhook']){
+    const code=fn(name);
+    assert.match(code,/hasApprovedPayment/);
+    assert.match(code,/hasApprovedPayment\?'active':'pending'/);
+    assert.match(code,/ps==='authorized'&&hasApprovedPayment/);
+  }
+  assert.match(fn('j3-billing-webhook'),/status==='approved'/);
+});
+
+test('repeated subscription payment callbacks cannot duplicate activity', () => {
+  const code=fn('j3-billing-webhook');
+  assert.match(code,/insertPaymentActivityOnce/);
+  assert.match(code,/error\.code!=='23505'/);
+  assert.match(code,/automatic_payment_approved/);
+  assert.match(code,/automatic_payment_reversed/);
+  assert.match(code,/automatic_payment_failed/);
+  assert.match(code,/!Number\.isFinite\(expected\)\|\|expected<=0/);
+});
+
+test('subscription DB migration uses security invoker and deny-by-default RPC privileges', () => {
+  const sql=fs.readFileSync(path.join(__dirname,'..','supabase','migrations',
+    '20261011193500_subscriptions_singleflight_and_event_idempotency.sql'),'utf8');
+  assert.match(sql,/provider_creation_claimed_at/);
+  assert.match(sql,/SECURITY INVOKER/i);
+  assert.match(sql,/REVOKE ALL ON FUNCTION public\.platform_claim_subscription_attempt\(uuid\) FROM PUBLIC, anon, authenticated/i);
+  assert.match(sql,/GRANT EXECUTE ON FUNCTION public\.platform_claim_subscription_attempt\(uuid\) TO service_role/i);
+  assert.match(sql,/CREATE UNIQUE INDEX IF NOT EXISTS subscription_events_mp_payment_once_idx/i);
 });
