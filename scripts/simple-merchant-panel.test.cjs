@@ -85,6 +85,8 @@ test('products keep free/zero prices, reject empty categories, and reject stale 
  assert.match(frontend,/if\(categoriesError\)throw categoriesError/);
  assert.match(frontend,/if\(!sel\.value\|\|!opt\)throw new Error/);
  assert.match(frontend,/expected_stock_quantity:p\.stock_quantity/);
+ assert.match(frontend,/dataset\.mcEnhanced!=="ready"/);
+ assert.match(enhancements,/form\.dataset\.mcEnhanced="ready"/);
  assert.match(frontend,/\.is\("archived_at",null\)/);
 });
 
