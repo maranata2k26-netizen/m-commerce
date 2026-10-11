@@ -32,7 +32,7 @@
     const priceValue=row.querySelector(".mc-v-price").value;
     const priceDelta=Number(priceValue||0);
     if(!Number.isFinite(priceDelta))throw new Error("Ingresá un adicional válido para la variante.");
-    if(stock!==""&&(!/^\\d+$/.test(stock)||!Number.isSafeInteger(Number(stock))||Number(stock)<0))throw new Error("El stock de una variante debe ser un número entero no negativo.");
+    if(stock!==""&&(!/^\d+$/.test(stock)||!Number.isSafeInteger(Number(stock))||Number(stock)<0))throw new Error("El stock de una variante debe ser un número entero no negativo.");
     return {
       ...(previous?.id?{
         id:previous.id,attributes:previous.attributes||{},
