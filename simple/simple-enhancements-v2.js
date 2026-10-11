@@ -28,6 +28,8 @@
   // This is what prevents a renamed size/color from becoming a new stock record.
   function variantPayloadFromRow(row,index){
     const previous=row._mcExistingVariant||null;
+    const name=row.querySelector(".mc-v-name").value.trim();
+    if(previous?.id&&!name)throw new Error("Una variante existente no puede quedar sin nombre. Usá Quitar para eliminarla.");
     const stock=row.querySelector(".mc-v-stock").value;
     const priceValue=row.querySelector(".mc-v-price").value;
     const priceDelta=Number(priceValue||0);
@@ -40,7 +42,7 @@
         ...(previous.stock_tracking?{expected_stock_quantity:previous.stock_quantity}:{}),
       }:{attributes:{}}),
       available:row.querySelector(".mc-v-available").checked,
-      name:row.querySelector(".mc-v-name").value.trim(),
+      name,
       price_delta:priceDelta,
       stock_tracking:stock!=="",
       stock_quantity:stock===""?null:Number(stock),
@@ -116,7 +118,7 @@
     installed=true;
     baseRpc=client.rpc.bind(client);
     client.rpc=async(name,args={},opts)=>{
-      if(name==="simple_upsert_product"&&variantContext&&document.getElementById("product-edit")&&args?.p_site_id===variantContext.siteId){
+      if(name==="simple_upsert_product"&&variantContext&&variantContext.form===document.getElementById("product-edit")&&variantContext.form?.dataset.mcEnhanced==="ready"&&args?.p_site_id===variantContext.siteId){
         const incoming=args?.p_product||{};
         const same=(incoming.id||null)===(variantContext.productId||null);
         if(same){
@@ -337,6 +339,7 @@
       if(button.dataset.mcWire)return;
       button.dataset.mcWire="1";
       button.addEventListener("click",()=>{
+        variantContext=null;productExtras=null;
         try{editingProductId=JSON.parse(button.dataset.json).id;}
         catch{editingProductId=null;}
       },true);
@@ -366,7 +369,7 @@
     const newProduct=document.getElementById("new-product");
     if(newProduct&&!newProduct.dataset.mcWire){
       newProduct.dataset.mcWire="1";
-      newProduct.addEventListener("click",()=>{editingProductId=null;},true);
+      newProduct.addEventListener("click",()=>{editingProductId=null;variantContext=null;productExtras=null;},true);
     }
 
     document.querySelectorAll(".edit-category").forEach(button=>{
@@ -404,21 +407,23 @@
     const textarea=document.getElementById("p_variants");
     if(!form||!textarea||form.dataset.mcEnhanced)return;
     form.dataset.mcEnhanced="loading";
-
+    const currentEditingId=editingProductId;
+    try{
     const id=await currentSiteId();
     const current=dash();
     const rubro=current?.settings?.business_category||"Catálogo general";
     let variants=[];
     let extra={brand:"",attributes:{}};
 
-    if(editingProductId){
-      const variantsResult=await client.from("product_variants").select("id,name,price_delta,stock_tracking,stock_quantity,attributes,sort_order,available,sku").eq("site_id",id).eq("product_id",editingProductId).eq("active",true).order("sort_order");
+    if(currentEditingId){
+      const variantsResult=await client.from("product_variants").select("id,name,price_delta,stock_tracking,stock_quantity,attributes,sort_order,available,sku").eq("site_id",id).eq("product_id",currentEditingId).eq("active",true).order("sort_order");
       if(variantsResult.error)throw variantsResult.error;
       variants=variantsResult.data||[];
-      const productResult=await client.from("products").select("brand,attributes").eq("site_id",id).eq("id",editingProductId).maybeSingle();
+      const productResult=await client.from("products").select("brand,attributes").eq("site_id",id).eq("id",currentEditingId).maybeSingle();
       if(!productResult.error&&productResult.data)extra=productResult.data;
     }
 
+    if(form!==document.getElementById("product-edit"))return;
     const oldField=textarea.closest(".field");
     oldField.style.display="none";
     const holder=document.createElement("section");
@@ -446,7 +451,7 @@
         variantContext=null;
         return;
       }
-      variantContext={siteId:id,productId:editingProductId||null,variants:values};
+      variantContext={form,siteId:id,productId:currentEditingId||null,variants:values};
       textarea.value=values.map(value=>`${value.name} | ${value.price_delta}`).join("\n");
       form.dataset.mcEnhanced="ready";
       productExtras=technical?{
@@ -482,6 +487,13 @@
     if(technical)form.querySelectorAll("#mc-prod-brand,#mc-prod-model,#mc-prod-measure").forEach(input=>input.addEventListener("input",sync));
     sync();
     if(!variantValidationError)form.dataset.mcEnhanced="ready";
+    }catch(error){
+      if(form===document.getElementById("product-edit")){
+        form.dataset.mcEnhanced="error";
+        notify("No se pudo cargar el editor completo de variantes. Actualizá la página antes de guardar el producto.",true);
+      }
+      console.warn("simple_product_editor",error);
+    }
   }
 
   async function applyStorefrontDesign(){
