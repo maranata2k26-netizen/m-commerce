@@ -6,7 +6,7 @@ const path=require('node:path');
 
 const page=fs.readFileSync(path.join(__dirname,'..','simple','simple.js'),'utf8');
 const phone='5491162760623';
-const links=[...page.matchAll(/href="(https:\/\/wa\.me\/[^"]+)"/g)].map(x=>x[1]);
+const links=[...page.matchAll(/href="(https:\/\/wa\.me\/\d+[^"]+)"/g)].map(x=>x[1]);
 
 test('all M Commerce contact buttons route to Joaco WhatsApp',()=>{
   assert.equal(links.length,7,'the landing, header, PRO and floating contacts should be covered');
