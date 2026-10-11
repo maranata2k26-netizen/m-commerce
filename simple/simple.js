@@ -323,8 +323,14 @@ async function wizard(siteId,step=1,dash=null){
  let slug=String(dash.site?.slug||""),slugTouched=false;
  const hasGeneratedSlug=canEditSlug&&/^tienda-[0-9a-f]{12}(?:-[0-9a-f]{6})?$/.test(slug);
  if(hasGeneratedSlug)slug=slugify(state.business_name).slice(0,60);
- let hasCategory=Number(dash.counts?.categories||0)>0;
- let hasProduct=Number(dash.counts?.products||0)>0;
+ const [catExisting,prodExisting]=await Promise.all([
+   sb.from("product_categories").select("id").eq("site_id",siteId).eq("active",true).is("archived_at",null).limit(1),
+   sb.from("products").select("id").eq("site_id",siteId).eq("active",true).limit(1)
+ ]);
+ if(catExisting.error)throw catExisting.error;
+ if(prodExisting.error)throw prodExisting.error;
+ let hasCategory=Boolean(catExisting.data?.length);
+ let hasProduct=Boolean(prodExisting.data?.length);
  const render=()=>{const content=[
    ["Nombre del comercio",field("w_name","¿Cómo se llama tu comercio?","text",state.business_name,'required minlength="2" maxlength="100"')+(canEditSlug?field("w_slug","Enlace de tu tienda","text",slug,'required minlength="3" maxlength="60" pattern="[a-z0-9]+(-[a-z0-9]+)*"')+'<p class="hint">Tu enlace: '+esc(window.M_COMMERCE_OFFICIAL_ORIGIN)+'/tienda/<strong id="w_slug_preview">'+esc(slug)+'</strong></p>':'<p class="hint">Enlace publicado: '+esc(dash.site?.slug||"")+'. No se modifica desde el asistente.</p>')],
   ["Logo y portada",`<div class="upload-grid"><div class="field"><label for="w_logo">Logo del comercio</label>${state.logo_url?`<img class="upload-preview logo-preview" src="${esc(state.logo_url)}" alt="Logo actual">`:""}<input id="w_logo" type="file" accept="image/jpeg,image/png,image/webp,image/avif"><span class="hint">JPG, PNG, WebP o AVIF · máx. 8 MB.</span></div><div class="field"><label for="w_cover">Imagen de portada</label>${state.cover_url?`<img class="upload-preview cover-preview" src="${esc(state.cover_url)}" alt="Portada actual">`:""}<input id="w_cover" type="file" accept="image/jpeg,image/png,image/webp,image/avif"><span class="hint">Se muestra arriba de tu tienda.</span></div></div>`],
@@ -359,7 +365,23 @@ async function wizard(siteId,step=1,dash=null){
   if(current===7&&!Object.values(state.payment_methods).some(Boolean))throw new Error("Elegí al menos un método de pago.");
   if(current===8)state.schedule=document.getElementById("w_schedule").value.trim();
   if(current===9&&!hasCategory){await rpc("simple_upsert_category",{p_site_id:siteId,p_category:{name:document.getElementById("w_first_category").value.trim(),active:true}});hasCategory=true;}
-  if(current===10){const {data:cats}=await sb.from("product_categories").select("id,name").eq("site_id",siteId).eq("active",true).order("created_at").limit(1);let image_url="";const f=document.getElementById("w_product_image").files[0];if(f)image_url=await upload(siteId,f,"products");await rpc("simple_upsert_product",{p_site_id:siteId,p_product:{name:document.getElementById("w_product_name").value.trim(),price:Number(document.getElementById("w_product_price").value),category_id:cats?.[0]?.id||null,category:cats?.[0]?.name||"Productos",image_url,active:true}});const done=await rpc("simple_complete_onboarding",{p_site_id:siteId});if(!done.ready)throw new Error("Falta completar: "+done.missing.join(", "));toast("Tu tienda está lista.");const sites=await rpc("platform_my_sites");return dashboard((Array.isArray(sites)?sites:sites.sites).find(x=>x.id===siteId))}
+  if(current===10){
+    if(!hasProduct){
+      const {data:cats,error:catsError}=await sb.from("product_categories").select("id,name").eq("site_id",siteId).eq("active",true).is("archived_at",null).order("created_at").limit(1);
+      if(catsError)throw catsError;
+      if(!cats?.[0]?.id)throw new Error("Creá una categoría antes de agregar productos.");
+      let image_url="";
+      const f=document.getElementById("w_product_image").files[0];
+      if(f)image_url=await upload(siteId,f,"products");
+      await rpc("simple_upsert_product",{p_site_id:siteId,p_product:{name:document.getElementById("w_product_name").value.trim(),price:Number(document.getElementById("w_product_price").value),category_id:cats[0].id,category:cats[0].name,image_url,active:true}});
+      hasProduct=true;
+    }
+    const done=await rpc("simple_complete_onboarding",{p_site_id:siteId});
+    if(!done.ready)throw new Error("Falta completar: "+(done.missing||[]).join(", "));
+    toast("Tu tienda está lista.");
+    const sites=await rpc("platform_my_sites");
+    return dashboard((Array.isArray(sites)?sites:sites.sites).find(x=>x.id===siteId));
+  }
   await rpc("simple_save_store_profile",{p_site_id:siteId,p_profile:{...state,onboarding_step:Math.min(10,current+1)}});if(current===1&&canEditSlug){const saved=await rpc("simple_set_draft_slug",{p_site_id:siteId,p_slug:slug});dash.site.slug=saved.slug;}current++;render();
  }catch(e){fail(e)}finally{setBusy(ev.submitter,false)}};
  };render();
