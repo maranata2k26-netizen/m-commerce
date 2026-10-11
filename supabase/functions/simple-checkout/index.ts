@@ -20,6 +20,15 @@ const uuid=(v:unknown)=>/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f
 const cut=(v:unknown,n:number)=>String(v??"").trim().slice(0,n);
 function coord(v:unknown,min:number,max:number){if(v===null||v===undefined||v==="")return null;const n=Number(v);if(!Number.isFinite(n)||n<min||n>max)throw new Error("INVALID_DELIVERY_COORDINATES");return n}
 async function sha(value:string){const bytes=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(value));return [...new Uint8Array(bytes)].map(x=>x.toString(16).padStart(2,"0")).join("")}
+function merchantWhatsAppNumber(value:unknown){
+  const digits=String(value??"").replace(/\D/g,"");
+  // Simple is offered in Argentina: normalize ordinary local cellphone numbers.
+  if(/^549\d{10}$/.test(digits))return digits;
+  if(/^54\d{10}$/.test(digits))return "549"+digits.slice(2);
+  if(/^0\d{10}$/.test(digits))return "549"+digits.slice(1);
+  if(/^\d{10}$/.test(digits))return "549"+digits;
+  return /^\d{8,15}$/.test(digits)?digits:"";
+}
 function waMessage(order:any,items:any[],body:any){
   const lat=coord(body?.delivery_latitude,-90,90),lng=coord(body?.delivery_longitude,-180,180);
   const mapUrl=lat!==null&&lng!==null?`https://www.google.com/maps?q=${lat},${lng}`:"";
@@ -97,7 +106,7 @@ Deno.serve(async(req:Request)=>{
       p_payment_method:method,p_site_id:siteId,p_items:items,p_checkout_attempt_id:attempt
     });
     if(createError)throw createError;
-    if(delivery==="delivery"){
+    if(delivery==="delivery"&&!order.idempotent_replay){
       const exactUpdate=await admin.from("orders").update({
         delivery_latitude:lat,delivery_longitude:lng,
         delivery_place_id:place||null,delivery_address_formatted:formatted||address||null,
@@ -108,7 +117,7 @@ Deno.serve(async(req:Request)=>{
     }
     const {data:orderItems,error:itemError}=await admin.from("order_items").select("product_name,variant_name,quantity,line_total").eq("order_id",order.id).eq("site_id",siteId).order("id");
     if(itemError)throw itemError;
-    const businessPhone=String(settings.whatsapp_number||"").replace(/\D/g,"");
+    const businessPhone=merchantWhatsAppNumber(settings.whatsapp_number);
     const message=waMessage(order,orderItems||[],{...body,payment_method:method,delivery_latitude:lat,delivery_longitude:lng,delivery_address_formatted:formatted||address,delivery_place_id:place,delivery_unit:unit,delivery_instructions:instructions});
     if(!order.idempotent_replay)try{
       const pushResponse=await fetch(SUPABASE_URL+"/functions/v1/j3-push",{method:"POST",headers:{"content-type":"application/json","apikey":SERVICE,"authorization":"Bearer "+SERVICE},body:JSON.stringify({order_id:order.id})});
@@ -119,7 +128,7 @@ Deno.serve(async(req:Request)=>{
   }catch(error){
     const raw=error instanceof Error?error.message:String(error);
     console.error(JSON.stringify({event:"simple_checkout_failed",error:raw.slice(0,300)}));
-    const map:any={product_not_available:"Uno de los productos ya no está disponible.",insufficient_stock:"No queda stock suficiente.",variant_required:"Elegí una variante.",orders_closed:"El comercio no está recibiendo pedidos.",invalid_delivery_coordinates:"La ubicación exacta no es válida."};
+    const map:any={checkout_attempt_conflict:"El pedido cambió durante el reintento. Volvé al carrito y confirmalo nuevamente.",product_not_available:"Uno de los productos ya no está disponible.",insufficient_stock:"No queda stock suficiente.",variant_required:"Elegí una variante.",orders_closed:"El comercio no está recibiendo pedidos.",invalid_delivery_coordinates:"La ubicación exacta no es válida."};
     const key=Object.keys(map).find(k=>raw.toLowerCase().includes(k));
     return json(req,{error:"CHECKOUT_FAILED",message:key?map[key]:"No se pudo registrar el pedido. Intentá nuevamente."},400);
   }
