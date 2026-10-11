@@ -72,7 +72,7 @@ test('the stock editor rejects malformed quantities before any product RPC',()=>
 
 test('only active variants are loaded and failures are not masked by empty data',()=>{
  assert.match(enhancements,/select\("id,name,price_delta,stock_tracking,stock_quantity,attributes,sort_order,available,sku"\)/);
- assert.match(enhancements,/\.eq\("product_id",editingProductId\)\.eq\("active",true\)/);
+ assert.match(enhancements,/\.eq\("product_id",currentEditingId\)\.eq\("active",true\)/);
  assert.match(enhancements,/if\(variantsResult\.error\)throw variantsResult\.error/);
  assert.match(enhancements,/row\._mcExistingVariant=variant\?\.id/);
  assert.match(enhancements,/variants:variantContext\.variants\.map/);
