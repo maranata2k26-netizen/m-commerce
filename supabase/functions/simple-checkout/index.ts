@@ -75,9 +75,9 @@ Deno.serve(async(req:Request)=>{
     const requestedDelivery=String(body?.delivery_method||"");
     if(!["pickup","delivery"].includes(requestedDelivery))return json(req,{error:"INVALID_DELIVERY_METHOD",message:"Elegí una forma de entrega válida."},422);
     const fulfillment=settings.fulfillment_config||{};
-    if((requestedDelivery==="pickup"&&fulfillment.pickup_enabled!==true)||(requestedDelivery==="delivery"&&fulfillment.shipping_enabled!==true))return json(req,{error:"DELIVERY_METHOD_DISABLED",message:"El comercio no ofrece esa forma de entrega."},409);
+    if((requestedDelivery==="pickup"&&fulfillment.pickup_enabled===false)||(requestedDelivery==="delivery"&&fulfillment.shipping_enabled!==true))return json(req,{error:"DELIVERY_METHOD_DISABLED",message:"El comercio no ofrece esa forma de entrega."},409);
     if(method==="mercadopago"){
-      const forwarded=await fetch(SUPABASE_URL+"/functions/v1/checkout-create",{method:"POST",headers:{"content-type":"application/json","apikey":SERVICE,"authorization":"Bearer "+SERVICE,...(origin?{"origin":origin}:{})},body:JSON.stringify(body)});
+      const forwarded=await fetch(SUPABASE_URL+"/functions/v1/checkout-create",{method:"POST",headers:{"content-type":"application/json","apikey":SERVICE,"authorization":"Bearer "+SERVICE,...(origin?{"origin":origin}:{})},body:JSON.stringify({...body,order_source:"simple"})});
       return new Response(await forwarded.text(),{status:forwarded.status,headers:{...headers(req),"content-type":"application/json; charset=utf-8"}});
     }
     const customerName=cut(body?.customer_name,120),phone=cut(body?.customer_phone,40),address=cut(body?.delivery_address,500),delivery=requestedDelivery;
