@@ -45,7 +45,7 @@ const ev=()=>({preventDefault(){},submitter:{disabled:false,dataset:{},textConte
 test('obsolete account enumeration monkeypatch is not loaded',()=>{
  assert.doesNotMatch(html,/src="\/simple\/simple-auth-fixes\.js/);
  assert.doesNotMatch(code,/user\?\.identities/);
- assert.match(html,/simple\.js\?v=20261011-(?:auth1|onboarding1|checkout1|panel1)/);
+ assert.match(html,/simple\.js\?v=20261011-(?:auth1|onboarding1|checkout1|panel1|panel2)/);
 });
 
 test('registration without a session proceeds to a persistent confirmation page (even for obfuscated users)',async()=>{
