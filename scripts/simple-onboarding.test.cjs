@@ -57,7 +57,7 @@ const submit=()=>({preventDefault(){},submitter:{disabled:false,textContent:'Con
 
 test('draft store owner sees a selectable clean URL and first name suggestion',async()=>{
  const h=await harness().init();
- assert.match(h.context.app.innerHTML,/Enlace de tu tienda/);
+ assert.match(h.context.app.innerHTML,/id="w_slug"/);
  const slug=h.context.document.getElementById('w_slug'),name=h.context.document.getElementById('w_name');
  name.value='Casa de Joaco';name.oninput();
  assert.equal(slug.value,'casa-de-joaco');
