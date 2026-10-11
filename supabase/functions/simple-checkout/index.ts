@@ -60,14 +60,18 @@ Deno.serve(async(req:Request)=>{
       const host=new URL(origin).hostname.toLowerCase();
       if(!PUBLIC_ORIGINS.has(new URL(origin).origin)&&host!==custom.toLowerCase())return json(req,{error:"ORIGIN_NOT_ALLOWED"},403);
     }
-    const {data:settings,error:settingsError}=await admin.from("settings").select("whatsapp_number,payment_methods").eq("site_id",siteId).single();
+    const {data:settings,error:settingsError}=await admin.from("settings").select("whatsapp_number,payment_methods,fulfillment_config").eq("site_id",siteId).single();
     if(settingsError)throw settingsError;
     if(settings.payment_methods?.[method]!==true)return json(req,{error:"PAYMENT_METHOD_DISABLED",message:"Esa forma de pago no está habilitada."},409);
+    const requestedDelivery=String(body?.delivery_method||"");
+    if(!["pickup","delivery"].includes(requestedDelivery))return json(req,{error:"INVALID_DELIVERY_METHOD",message:"Elegí una forma de entrega válida."},422);
+    const fulfillment=settings.fulfillment_config||{};
+    if((requestedDelivery==="pickup"&&fulfillment.pickup_enabled!==true)||(requestedDelivery==="delivery"&&fulfillment.shipping_enabled!==true))return json(req,{error:"DELIVERY_METHOD_DISABLED",message:"El comercio no ofrece esa forma de entrega."},409);
     if(method==="mercadopago"){
       const forwarded=await fetch(SUPABASE_URL+"/functions/v1/checkout-create",{method:"POST",headers:{"content-type":"application/json","apikey":SERVICE,"authorization":"Bearer "+SERVICE,...(origin?{"origin":origin}:{})},body:JSON.stringify(body)});
       return new Response(await forwarded.text(),{status:forwarded.status,headers:{...headers(req),"content-type":"application/json; charset=utf-8"}});
     }
-    const customerName=cut(body?.customer_name,120),phone=cut(body?.customer_phone,40),address=cut(body?.delivery_address,500),delivery=body?.delivery_method==="delivery"?"delivery":"pickup";
+    const customerName=cut(body?.customer_name,120),phone=cut(body?.customer_phone,40),address=cut(body?.delivery_address,500),delivery=requestedDelivery;
     const lat=delivery==="delivery"?coord(body?.delivery_latitude,-90,90):null;
     const lng=delivery==="delivery"?coord(body?.delivery_longitude,-180,180):null;
     if((lat===null)!==(lng===null))return json(req,{error:"INVALID_DELIVERY_COORDINATES",message:"La ubicación exacta está incompleta."},422);
@@ -83,6 +87,7 @@ Deno.serve(async(req:Request)=>{
     if(Array.isArray(body?.items)&&body.items.length>40)return json(req,{error:"TOO_MANY_ITEMS",message:"El pedido puede incluir hasta 40 productos o variantes diferentes."},422);
     const items=Array.isArray(body?.items)?body.items.slice(0,40).map((x:any)=>({product_id:String(x?.product_id||""),quantity:Number(x?.quantity||0),extra_ids:[],removed_ingredient_ids:[],note:"",variant_id:x?.variant_id?String(x.variant_id):null})):[];
     if(!items.length)return json(req,{error:"INVALID_ITEMS",message:"El carrito está vacío."},422);
+    if(items.some((x:any)=>!uuid(x.product_id)||!Number.isInteger(x.quantity)||x.quantity<1||x.quantity>100||(x.variant_id!==null&&!uuid(x.variant_id))))return json(req,{error:"INVALID_ITEMS",message:"Revisá los productos y las cantidades antes de confirmar."},422);
     const ip=(req.headers.get("x-forwarded-for")??"unknown").split(",")[0].trim();
     const {data:allowed,error:rateError}=await admin.rpc("checkout_rate_limit_v19",{p_key_hash:await sha(`${ip}|${siteId}|simple-checkout`),p_limit:30});
     if(rateError)throw rateError;if(!allowed)return json(req,{error:"TOO_MANY_REQUESTS",message:"Esperá un minuto antes de volver a intentar."},429);
@@ -105,7 +110,7 @@ Deno.serve(async(req:Request)=>{
     if(itemError)throw itemError;
     const businessPhone=String(settings.whatsapp_number||"").replace(/\D/g,"");
     const message=waMessage(order,orderItems||[],{...body,payment_method:method,delivery_latitude:lat,delivery_longitude:lng,delivery_address_formatted:formatted||address,delivery_place_id:place,delivery_unit:unit,delivery_instructions:instructions});
-    try{
+    if(!order.idempotent_replay)try{
       const pushResponse=await fetch(SUPABASE_URL+"/functions/v1/j3-push",{method:"POST",headers:{"content-type":"application/json","apikey":SERVICE,"authorization":"Bearer "+SERVICE},body:JSON.stringify({order_id:order.id})});
       if(!pushResponse.ok)console.warn("push_queue_status",pushResponse.status);
     }catch(e){console.warn("push_queue",e)}
