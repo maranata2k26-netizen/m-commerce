@@ -75,13 +75,13 @@ test('platform billing refuses a connected merchant account before requesting a 
   assert.match(collector, /MP_ACCOUNT_ALREADY_USED/);
 });
 
-test('platform OAuth callback refuses connected merchant identity before saving billing account', () => {
+test('platform OAuth callback cannot replace an existing connected collector with a different account', () => {
   const src = fn('mercadopago-connect');
   const platformFlow = src.split('if(callbackFlow==="platform_billing"){')[1]?.split('if(!await canManageMerchant')[0] || '';
-  assert.match(platformFlow, /from\("mercadopago_connections"\)/);
-  assert.match(platformFlow, /merchantUsage\.data/);
-  assert.match(platformFlow, /account_in_use/);
-  assert.ok(platformFlow.indexOf('merchantUsage.data') < platformFlow.indexOf('.upsert({provider:"mercadopago"'));
+  assert.match(platformFlow, /from\("platform_billing_accounts"\)/);
+  assert.match(platformFlow, /prior\.data\?\.status==="connected"/);
+  assert.match(platformFlow, /disconnect_required/);
+  assert.ok(platformFlow.indexOf('disconnect_required') < platformFlow.indexOf('.upsert({provider:"mercadopago"'));
 });
 
 test('subscription webhook checks collector identity and merchant collision before applying a payment', () => {
@@ -90,6 +90,8 @@ test('subscription webhook checks collector identity and merchant collision befo
   assert.match(account, /J3_BILLING_IDENTITY_NOT_CONFIRMED/);
   assert.match(account, /from\('mercadopago_connections'\)/);
   assert.match(account, /MP_ACCOUNT_ALREADY_USED/);
+  assert.match(account, /allowed_shared_merchant_site_id/);
+  assert.match(account, /merchantUsage.length!==1/);
 });
 
 test('admin billing account status reports existing identity collision rather than claiming ready', () => {
@@ -97,9 +99,38 @@ test('admin billing account status reports existing identity collision rather th
   const statusFlow = src.split('if(action==="account_status")')[1]?.split('if(action==="account_start")')[0] || '';
   assert.match(statusFlow, /account_conflict:conflict/);
   assert.match(statusFlow, /connected:a\.status==="connected"&&!conflict/);
+  assert.match(statusFlow, /allowed_shared_merchant_site_id/);
 });
 
 test('staging checkout cannot use legacy merchant token even if legacy site id is supplied', () => {
   const src = fn('checkout-create');
   assert.match(src, /if\(!IS_STAGING&&siteId===LEGACY_SITE_ID&&LEGACY_MP_TOKEN\)/);
+});
+
+test('shared receiver is opt-in for exactly one connected site across all billing paths', () => {
+  for (const name of ['j3-billing','j3-billing-webhook','j3-billing-account']) {
+    const code = fn(name);
+    assert.match(code, /allowed_shared_merchant_site_id/, name);
+    assert.match(code, /length!==1/, name);
+    assert.match(code, /MP_ACCOUNT_ALREADY_USED/, name);
+  }
+});
+
+test('shared authorization is admin-only and checks verified payer email plus exact merchant site', () => {
+  const code = fn('j3-billing-account');
+  assert.match(code, /if\(action==="account_allow_shared_merchant"\)/);
+  assert.match(code, /await authUser\(req,admin\)/);
+  assert.match(code, /J3_BILLING_IDENTITY_NOT_CONFIRMED/);
+  assert.match(code, /SHARED_SITE_MISMATCH/);
+  assert.match(code, /allowed_shared_merchant_site_id:siteId/);
+  const callback = fn('mercadopago-connect');
+  assert.match(callback, /billingUsage\.data\.allowed_shared_merchant_site_id/);
+});
+
+test('the migration defaults to deny-all and adds a single optional FK merchant allowance', () => {
+  const sql = fs.readFileSync(path.join(__dirname, '..', 'supabase', 'migrations',
+    '20261011192234_authorize_shared_billing_merchant.sql'), 'utf8');
+  assert.match(sql, /allowed_shared_merchant_site_id uuid/i);
+  assert.match(sql, /REFERENCES public\.sites\(id\)/i);
+  assert.doesNotMatch(sql, /DEFAULT\s+['"0-9a-f-]+/i);
 });
