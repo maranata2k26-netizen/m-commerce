@@ -80,11 +80,11 @@ test('recovery sends an explicit staging callback and does not reveal if email e
 test('password change requires matching confirmation before updating auth',async()=>{
  const x=isolate('function resetPasswordView(){','async function appRoute(){');
  x.context.resetPasswordView();
- x.controls['new_password'].value='password-strong';
- x.controls['confirm_password'].value='not-the-same';
+ x.context.document.getElementById('new_password').value='password-strong';
+ x.context.document.getElementById('confirm_password').value='not-the-same';
  await x.controls['reset-form'].onsubmit(ev());
  assert.equal(x.calls.length,0);
- x.controls['confirm_password'].value='password-strong';
+ x.context.document.getElementById('confirm_password').value='password-strong';
  await x.controls['reset-form'].onsubmit(ev());
  assert.equal(x.calls.length,1);
  assert.equal(x.calls[0][0],'update');
