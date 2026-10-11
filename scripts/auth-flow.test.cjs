@@ -113,3 +113,35 @@ test('separate staging and production redirect settings are retained',()=>{
  assert.match(config,/kjoixhzaxopdbmudzfsg/);
  assert.match(code,/PASSWORD_RECOVERY/);
 });
+
+test('login uses password sign-in and returns to the Simple dashboard',async()=>{
+ const x=isolate('function authView(mode){','async function adminRoute()');
+ x.context.authView('login');
+ await x.controls['auth-form'].onsubmit(ev());
+ assert.equal(x.calls[0][0],'login');
+ assert.equal(x.calls[0][1].email,'owner@example.test');
+ assert.equal(x.context.location.href,'/simple/app');
+});
+
+test('signup with an immediate valid session skips email verification',async()=>{
+ const x=isolate('function authView(mode){','async function adminRoute()',{
+  signup:{data:{session:{access_token:'simulated-token'},user:{}},error:null}
+ });
+ x.context.authView('register');
+ await x.controls['auth-form'].onsubmit(ev());
+ assert.equal(x.actions.find(z=>z[0]==='replace')?.[1],'/simple/app');
+ assert.equal(x.store.has('mc_pending_confirmation_email'),false);
+});
+
+test('valid password-recovery link opens the password form instead of normal login',async()=>{
+ const start='async function appRoute(){',end='function createStoreView(user){';
+ const a=code.indexOf(start),b=code.indexOf(end,a+start.length);
+ const called=[],ctx={
+  getSession:async()=>({user:{id:'test'}}),location:{search:'?reset=1'},
+  authExpiredView:()=>called.push('expired'),resetPasswordView:()=>called.push('reset'),
+  authView:()=>called.push('login'),URLSearchParams
+ };
+ vm.runInNewContext(code.slice(a,b),ctx,{timeout:1500});
+ await ctx.appRoute();
+ assert.deepEqual(called,['reset']);
+});
