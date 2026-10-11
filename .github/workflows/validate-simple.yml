@@ -7,6 +7,7 @@ on:
       - "simple/**"
       - "scripts/frontend-environment.test.cjs"
       - "scripts/auth-flow.test.cjs"
+      - "scripts/contact-whatsapp.test.cjs"
       - "scripts/staging-live-smoke.test.cjs"
       - "supabase/**"
       - "vercel.json"
@@ -20,6 +21,8 @@ jobs:
           deno-version: v2.x
       - name: Validate browser JavaScript
         run: for script in simple/*.js; do node --check "$script" || exit 1; done
+      - name: Validate WhatsApp contact and Joaco links
+        run: node --test scripts/contact-whatsapp.test.cjs
       - name: Validate registration, email confirmation and recovery flows
         run: node --test scripts/auth-flow.test.cjs
       - name: Validate staging/production client isolation
