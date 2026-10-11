@@ -64,6 +64,7 @@ test('draft store owner sees a selectable clean URL and first name suggestion',a
  slug.value='Tienda Joaco premium';slug.oninput();
  assert.equal(slug.value,'tienda-joaco-premium');
  await h.elements.wizard.onsubmit(submit());
+ assert.deepEqual(h.errors,[],'The wizard unexpectedly failed: '+h.errors.join('|'));
  assert.equal(h.calls.filter(x=>x.name==='simple_set_draft_slug').length,1);
  assert.equal(h.store.site.slug,'tienda-joaco-premium');
  assert.match(h.context.app.innerHTML,/Paso 2 de 10/);
