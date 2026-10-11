@@ -403,7 +403,7 @@
     const form=document.getElementById("product-edit");
     const textarea=document.getElementById("p_variants");
     if(!form||!textarea||form.dataset.mcEnhanced)return;
-    form.dataset.mcEnhanced="1";
+    form.dataset.mcEnhanced="loading";
 
     const id=await currentSiteId();
     const current=dash();
@@ -480,6 +480,7 @@
     holder.querySelector("#mc-add-variant").onclick=()=>addVariant({});
     if(technical)form.querySelectorAll("#mc-prod-brand,#mc-prod-model,#mc-prod-measure").forEach(input=>input.addEventListener("input",sync));
     sync();
+    if(!variantValidationError)form.dataset.mcEnhanced="ready";
   }
 
   async function applyStorefrontDesign(){
