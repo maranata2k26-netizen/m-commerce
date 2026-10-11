@@ -41,8 +41,9 @@ function harness(options={}){
    querySelector(q){if(q==='.close')return close;if(q==='#checkout')return forms.checkout;return null;},
    querySelectorAll(q){
     if(q!=='.q')return [];
-    return [...d.innerHTML.matchAll(/<button class="mini q" data-key="([^"]+)" data-d="([^"]+)"/g)]
+    d.controls=[...d.innerHTML.matchAll(/<button class="mini q" data-key="([^"]+)" data-d="([^"]+)"/g)]
      .map(m=>({dataset:{key:m[1],d:m[2]},onclick:null}));
+    return d.controls;
    }};
   drawers.push(d);return d;
  }
@@ -74,6 +75,20 @@ test('variant quantities are keyed by product+variant (not by product alone)',()
  assert.match(snippet,/data-key="\$\{esc\(x\.key\)\}"/);
  assert.match(snippet,/cart\.find\(i=>i\.key===b\.dataset\.key\)/);
  assert.doesNotMatch(snippet,/cart\.find\(i=>i\.id===b\.dataset\.id\)/);
+});
+
+test('quantity + on the second variant never changes the first variant',async()=>{
+ const h=harness();await h.init();h.add(vidA);h.add(vidB);
+ const drawer=h.openCart();
+ const secondPlus=drawer.controls.find(x=>x.dataset.key===pid+':'+vidB&&x.dataset.d==='1');
+ assert.ok(secondPlus,'expected quantity control for second variant');
+ secondPlus.onclick();
+ await h.forms.checkout.onsubmit(submit());
+ const order=h.requests.at(-1);
+ assert.deepEqual(order.items.map(x=>({variant_id:x.variant_id,quantity:x.quantity})),[
+   {variant_id:vidA,quantity:1},
+   {variant_id:vidB,quantity:2}
+ ]);
 });
 
 test('different variants remain separate checkout items and preserve server-side price authority',async()=>{
