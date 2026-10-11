@@ -145,7 +145,7 @@ test('webshop WhatsApp links normalize local Argentine mobile numbers',()=>{
  const s=server.indexOf('function merchantWhatsAppNumber('),e=server.indexOf('function waMessage(',s);
  assert.ok(s>=0&&e>s);
  const scope={};
- vm.runInNewContext(server.slice(s,e),scope,{timeout:1000});
+ vm.runInNewContext(server.slice(s,e).replace('value:unknown','value'),scope,{timeout:1000});
  assert.equal(scope.merchantWhatsAppNumber('11 6276-0623'),'5491162760623');
  assert.equal(scope.merchantWhatsAppNumber('+54 9 11 6276-0623'),'5491162760623');
  assert.equal(scope.merchantWhatsAppNumber('+54 11 6276-0623'),'5491162760623');
