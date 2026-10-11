@@ -37,6 +37,7 @@ function harness(options={}){
    if(name==='simple_upsert_category'){categories.push({id:'cat-created',name:args.p_category.name,active:true});return{id:'cat-created'};}
    if(name==='simple_upsert_product'){products.push({id:'prod-created',name:args.p_product.name,active:true});return{id:'prod-created'};}
    if(name==='simple_save_store_profile'&&opts.failSaveOnce){opts.failSaveOnce=false;throw Error('SIMULATED_SAVE_ERROR');}
+   if(name==='simple_save_store_profile')return {ok:true};
    if(name==='simple_complete_onboarding'){finishTries++;return opts.failFinishOnce&&finishTries===1?{ready:false,missing:['mock retry']}:{ready:true};}
    if(name==='simple_set_draft_slug'){store.site.slug=args.p_slug;return{slug:args.p_slug};}
    if(name==='platform_my_sites')return [store.site];
