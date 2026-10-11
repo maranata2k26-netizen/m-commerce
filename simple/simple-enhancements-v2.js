@@ -448,6 +448,7 @@
       }
       variantContext={siteId:id,productId:editingProductId||null,variants:values};
       textarea.value=values.map(value=>`${value.name} | ${value.price_delta}`).join("\n");
+      form.dataset.mcEnhanced="ready";
       productExtras=technical?{
         brand:document.getElementById("mc-prod-brand")?.value||"",
         model:document.getElementById("mc-prod-model")?.value||"",
