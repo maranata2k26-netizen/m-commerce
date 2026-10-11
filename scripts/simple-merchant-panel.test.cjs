@@ -100,6 +100,7 @@ function setupOrdersPanel(){
  const select={value:'new',dataset:{id:order.id},disabled:false,onchange:null};
  let errors=[],notices=[],calls=[],failNext=true;
  const panel={innerHTML:'',querySelectorAll:k=>k==='.order-status'?[select]:[]};
+ const refreshButton={onclick:null};
  const supabase={
   from(table){
    return{
@@ -109,7 +110,55 @@ function setupOrdersPanel(){
    };
   }
  };
- const ctx={sb:supabase,esc:x=>String(x),money:v=>'$'+v,
+ const ctx={sb:supabase,esc:x=>String(x),money:v=>'
+  rpc:async(name,arg)=>{calls.push({name,arg});if(failNext){failNext=false;throw Error('PAYMENT_NOT_APPROVED')}return{status:arg.p_status}},
+  fail:e=>errors.push(e.message),toast:x=>notices.push(x),Date};
+ vm.runInNewContext(frontend.slice(start,end),ctx,{timeout:1000});
+ return {run:()=>ctx.ordersPanel(panel,'123e4567-e89b-42d3-a456-426614174002'),select,panel,refreshButton,calls,errors,notices};
+}
+
+test('order status change rolls back visually if the server rejects it',async()=>{
+ const h=setupOrdersPanel();
+ await h.run();
+ assert.equal(h.select.dataset.savedStatus,'new');
+ h.select.value='ready';
+ await h.select.onchange();
+ assert.equal(h.select.value,'new');
+ assert.equal(h.select.disabled,false);
+ assert.match(h.errors[0],/PAYMENT_NOT_APPROVED/);
+ assert.equal(h.notices.length,0);
+ h.select.value='preparing';
+ await h.select.onchange();
+ assert.equal(h.select.value,'preparing');
+ assert.equal(h.select.dataset.savedStatus,'preparing');
+ assert.equal(h.select.disabled,false);
+ assert.equal(h.notices.length,1);
+ assert.equal(h.calls[1].name,'platform_update_order_status');
+});
+
+test('refreshing orders does not create sales or modify a status',async()=>{
+ const h=setupOrdersPanel();await h.run();
+ assert.match(h.panel.innerHTML,/Últimos 100 pedidos/);
+ assert.equal(typeof h.refreshButton.onclick,'function');
+ await h.refreshButton.onclick();
+ assert.deepEqual(h.calls,[]);
+ assert.ok(h.notices.includes('Pedidos actualizados.'));
+});
+
+test('finishing or editing published Simple store cannot unpublish it',()=>{
+ assert.match(sql,/status=case when v_site\.status='published' then 'published' else 'draft' end/);
+ assert.match(sql,/jsonb_build_object\('status',v_site\.status\)/);
+ assert.match(sql,/'status',v_site\.status,'preview_url'/);
+ assert.doesNotMatch(sql,/status='draft', last_activity_at/);
+});
+
+test('contact and the previous checkout are preserved on this stacked branch',()=>{
+ assert.equal((frontend.match(/5491162760623/g)||[]).length,7);
+ assert.match(frontend,/checkoutAttemptId=crypto\.randomUUID\(\)/);
+ assert.match(frontend,/cart\.find\(i=>i\.key===b\.dataset\.key\)/);
+ assert.match(frontend,/platform_update_order_status/);
+});
++v,document:{getElementById:id=>id==='refresh-orders'?refreshButton:null},
   rpc:async(name,arg)=>{calls.push({name,arg});if(failNext){failNext=false;throw Error('PAYMENT_NOT_APPROVED')}return{status:arg.p_status}},
   fail:e=>errors.push(e.message),toast:x=>notices.push(x),Date};
  vm.runInNewContext(frontend.slice(start,end),ctx,{timeout:1000});
