@@ -158,3 +158,20 @@ test('contact and the previous checkout are preserved on this stacked branch',()
  assert.match(frontend,/cart\.find\(i=>i\.key===b\.dataset\.key\)/);
  assert.match(frontend,/platform_update_order_status/);
 });
+
+
+test('blank names of already existing variants never silently delete stock records',()=>{
+ const previous={id:'123e4567-e89b-42d3-a456-426614174001',stock_tracking:true,stock_quantity:7,attributes:{}};
+ assert.throws(()=>variantSerializer()(variantRow(previous,{'.mc-v-name':'  '}),0),/sin nombre/i);
+});
+
+test('new or edited products cannot bypass an unloaded or stale enhancement',()=>{
+ assert.match(frontend,/dataset\.mcEnhanced!=="ready"/);
+ assert.match(frontend,/Ingresá un stock válido/);
+ assert.match(enhancements,/variantContext\.form===document\.getElementById\("product-edit"\)/);
+ assert.match(enhancements,/variantContext\.form\?\.dataset\.mcEnhanced==="ready"/);
+ assert.match(enhancements,/variantContext=null;productExtras=null/);
+ assert.match(enhancements,/currentEditingId=editingProductId/);
+ assert.match(enhancements,/if\(form!==document\.getElementById\("product-edit"\)\)return/);
+ assert.match(enhancements,/No se pudo cargar el editor completo de variantes/);
+});
