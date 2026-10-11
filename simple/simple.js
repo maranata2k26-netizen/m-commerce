@@ -23,7 +23,7 @@ function nav(){return `<nav class="nav site-nav">
     <a href="/simple#como-funciona">Cómo funciona</a>
     <a href="/simple#planes">Planes</a>
     <a href="/simple#comparacion">Diferencias</a>
-    <a href="https://wa.me/5493329698591?text=Hola%20Ema%2C%20vi%20M%20Commerce%20y%20quiero%20asesoramiento." target="_blank" rel="noopener noreferrer">Contacto</a>
+    <a href="https://wa.me/5491162760623?text=Hola%20Joaco%2C%20vi%20M%20Commerce%20y%20quiero%20asesoramiento." target="_blank" rel="noopener noreferrer">Contacto</a>
   </div>
   <div class="nav-actions">
     <a class="btn secondary" href="/simple/app">Ingresar</a>
@@ -41,7 +41,7 @@ function landing(){
      <div class="hero-actions">
        <a class="btn brand" href="/simple/app?mode=register">Crear mi tienda</a>
        <a class="btn secondary hero-secondary" href="#planes">Ver planes</a>
-       <a class="btn whatsapp-btn" href="https://wa.me/5493329698591?text=Hola%20Ema%2C%20vi%20M%20Commerce%20y%20quiero%20asesoramiento." target="_blank" rel="noopener noreferrer"><svg aria-hidden="true" viewBox="0 0 32 32" width="20" height="20"><path fill="currentColor" d="M19.1 17.4c-.3-.2-1.8-.9-2.1-1-.3-.1-.5-.2-.7.2-.2.3-.8 1-.9 1.2-.2.2-.3.2-.6.1-1.8-.9-3-1.7-4.2-3.8-.3-.5.3-.5.9-1.6.1-.2 0-.4 0-.6-.1-.2-.7-1.7-1-2.3-.3-.7-.6-.6-.8-.6h-.7c-.2 0-.6.1-.9.4-.3.3-1.2 1.2-1.2 2.9s1.2 3.3 1.4 3.6c.2.2 2.4 3.7 5.9 5.2.8.4 1.5.6 2 .7.8.3 1.6.2 2.2.1.7-.1 1.8-.7 2-1.4.3-.7.3-1.3.2-1.4-.1-.2-.3-.2-.6-.4M16.1 26h-.1c-1.8 0-3.5-.5-5-1.4l-.4-.2-3.7 1 1-3.6-.2-.4A10 10 0 1 1 16.1 26m8.5-18.6A12 12 0 0 0 5.7 21.9L4 28l6.3-1.6A12 12 0 1 0 24.6 7.4"/></svg><span>Hablá con Ema</span></a>
+       <a class="btn whatsapp-btn" href="https://wa.me/5491162760623?text=Hola%20Joaco%2C%20vi%20M%20Commerce%20y%20quiero%20asesoramiento." target="_blank" rel="noopener noreferrer"><svg aria-hidden="true" viewBox="0 0 32 32" width="20" height="20"><path fill="currentColor" d="M19.1 17.4c-.3-.2-1.8-.9-2.1-1-.3-.1-.5-.2-.7.2-.2.3-.8 1-.9 1.2-.2.2-.3.2-.6.1-1.8-.9-3-1.7-4.2-3.8-.3-.5.3-.5.9-1.6.1-.2 0-.4 0-.6-.1-.2-.7-1.7-1-2.3-.3-.7-.6-.6-.8-.6h-.7c-.2 0-.6.1-.9.4-.3.3-1.2 1.2-1.2 2.9s1.2 3.3 1.4 3.6c.2.2 2.4 3.7 5.9 5.2.8.4 1.5.6 2 .7.8.3 1.6.2 2.2.1.7-.1 1.8-.7 2-1.4.3-.7.3-1.3.2-1.4-.1-.2-.3-.2-.6-.4M16.1 26h-.1c-1.8 0-3.5-.5-5-1.4l-.4-.2-3.7 1 1-3.6-.2-.4A10 10 0 1 1 16.1 26m8.5-18.6A12 12 0 0 0 5.7 21.9L4 28l6.3-1.6A12 12 0 1 0 24.6 7.4"/></svg><span>Hablá con Joaco</span></a>
      </div>
      <div class="trust-line"><span>✓ Alta online</span><span>✓ Catálogo profesional</span><span>✓ Pedidos y cobros</span><span>✓ Gestión desde celular</span></div>
    </div>
@@ -142,7 +142,7 @@ function landing(){
       <ul class="ticks compact-ticks pro-ticks">
         <li>Diseño e identidad visual personalizados</li><li>Dominio propio o subdominio profesional</li><li>Panel de comercio completo</li><li>Editor visual avanzado</li><li>Mercado Pago integrado</li><li>Gestión avanzada de pedidos</li><li>Seguimiento de pedidos</li><li>Stock y variantes avanzadas</li><li>Categorías y estructura a medida</li><li>Sucursales</li><li>Delivery y retiro configurables</li><li>Reservas cuando el rubro lo requiere</li><li>Notificaciones</li><li>Reportes y estadísticas</li><li>Soporte prioritario</li><li>Configuración e implementación personalizada</li>
       </ul>
-      <div class="pro-actions"><a class="btn whatsapp-btn pro-wa full" href="https://wa.me/5493329698591?text=Hola%20Ema%2C%20vi%20M%20Commerce%20y%20quiero%20asesoramiento." target="_blank" rel="noopener noreferrer"><svg aria-hidden="true" viewBox="0 0 32 32" width="20" height="20"><path fill="currentColor" d="M19.1 17.4c-.3-.2-1.8-.9-2.1-1-.3-.1-.5-.2-.7.2-.2.3-.8 1-.9 1.2-.2.2-.3.2-.6.1-1.8-.9-3-1.7-4.2-3.8-.3-.5.3-.5.9-1.6.1-.2 0-.4 0-.6-.1-.2-.7-1.7-1-2.3-.3-.7-.6-.6-.8-.6h-.7c-.2 0-.6.1-.9.4-.3.3-1.2 1.2-1.2 2.9s1.2 3.3 1.4 3.6c.2.2 2.4 3.7 5.9 5.2.8.4 1.5.6 2 .7.8.3 1.6.2 2.2.1.7-.1 1.8-.7 2-1.4.3-.7.3-1.3.2-1.4-.1-.2-.3-.2-.6-.4M16.1 26h-.1c-1.8 0-3.5-.5-5-1.4l-.4-.2-3.7 1 1-3.6-.2-.4A10 10 0 1 1 16.1 26m8.5-18.6A12 12 0 0 0 5.7 21.9L4 28l6.3-1.6A12 12 0 1 0 24.6 7.4"/></svg><span>Hablá con Ema por PRO</span></a><a class="btn secondary full" href="/simple/pro">Enviar solicitud PRO</a></div>
+      <div class="pro-actions"><a class="btn whatsapp-btn pro-wa full" href="https://wa.me/5491162760623?text=Hola%20Joaco%2C%20vi%20M%20Commerce%20y%20quiero%20asesoramiento." target="_blank" rel="noopener noreferrer"><svg aria-hidden="true" viewBox="0 0 32 32" width="20" height="20"><path fill="currentColor" d="M19.1 17.4c-.3-.2-1.8-.9-2.1-1-.3-.1-.5-.2-.7.2-.2.3-.8 1-.9 1.2-.2.2-.3.2-.6.1-1.8-.9-3-1.7-4.2-3.8-.3-.5.3-.5.9-1.6.1-.2 0-.4 0-.6-.1-.2-.7-1.7-1-2.3-.3-.7-.6-.6-.8-.6h-.7c-.2 0-.6.1-.9.4-.3.3-1.2 1.2-1.2 2.9s1.2 3.3 1.4 3.6c.2.2 2.4 3.7 5.9 5.2.8.4 1.5.6 2 .7.8.3 1.6.2 2.2.1.7-.1 1.8-.7 2-1.4.3-.7.3-1.3.2-1.4-.1-.2-.3-.2-.6-.4M16.1 26h-.1c-1.8 0-3.5-.5-5-1.4l-.4-.2-3.7 1 1-3.6-.2-.4A10 10 0 1 1 16.1 26m8.5-18.6A12 12 0 0 0 5.7 21.9L4 28l6.3-1.6A12 12 0 1 0 24.6 7.4"/></svg><span>Hablá con Joaco por PRO</span></a><a class="btn secondary full" href="/simple/pro">Enviar solicitud PRO</a></div>
     </article>
    </div>
  </section>
@@ -163,22 +163,22 @@ function landing(){
 
  <section class="final-cta">
    <img src="/assets/m-commerce-mark.svg" alt="" aria-hidden="true">
-   <div><div class="eyebrow">M Commerce</div><h2>Tu negocio puede empezar a vender online hoy.</h2><p>Creá tu tienda Simple o hablá con Ema si necesitás una solución PRO.</p></div>
-   <div class="final-actions"><a class="btn brand" href="/simple/app?mode=register">Crear mi tienda</a><a class="btn whatsapp-btn" href="https://wa.me/5493329698591?text=Hola%20Ema%2C%20vi%20M%20Commerce%20y%20quiero%20asesoramiento." target="_blank" rel="noopener noreferrer"><svg aria-hidden="true" viewBox="0 0 32 32" width="20" height="20"><path fill="currentColor" d="M19.1 17.4c-.3-.2-1.8-.9-2.1-1-.3-.1-.5-.2-.7.2-.2.3-.8 1-.9 1.2-.2.2-.3.2-.6.1-1.8-.9-3-1.7-4.2-3.8-.3-.5.3-.5.9-1.6.1-.2 0-.4 0-.6-.1-.2-.7-1.7-1-2.3-.3-.7-.6-.6-.8-.6h-.7c-.2 0-.6.1-.9.4-.3.3-1.2 1.2-1.2 2.9s1.2 3.3 1.4 3.6c.2.2 2.4 3.7 5.9 5.2.8.4 1.5.6 2 .7.8.3 1.6.2 2.2.1.7-.1 1.8-.7 2-1.4.3-.7.3-1.3.2-1.4-.1-.2-.3-.2-.6-.4M16.1 26h-.1c-1.8 0-3.5-.5-5-1.4l-.4-.2-3.7 1 1-3.6-.2-.4A10 10 0 1 1 16.1 26m8.5-18.6A12 12 0 0 0 5.7 21.9L4 28l6.3-1.6A12 12 0 1 0 24.6 7.4"/></svg><span>Hablá con Ema</span></a></div>
+   <div><div class="eyebrow">M Commerce</div><h2>Tu negocio puede empezar a vender online hoy.</h2><p>Creá tu tienda Simple o hablá con Joaco si necesitás una solución PRO.</p></div>
+   <div class="final-actions"><a class="btn brand" href="/simple/app?mode=register">Crear mi tienda</a><a class="btn whatsapp-btn" href="https://wa.me/5491162760623?text=Hola%20Joaco%2C%20vi%20M%20Commerce%20y%20quiero%20asesoramiento." target="_blank" rel="noopener noreferrer"><svg aria-hidden="true" viewBox="0 0 32 32" width="20" height="20"><path fill="currentColor" d="M19.1 17.4c-.3-.2-1.8-.9-2.1-1-.3-.1-.5-.2-.7.2-.2.3-.8 1-.9 1.2-.2.2-.3.2-.6.1-1.8-.9-3-1.7-4.2-3.8-.3-.5.3-.5.9-1.6.1-.2 0-.4 0-.6-.1-.2-.7-1.7-1-2.3-.3-.7-.6-.6-.8-.6h-.7c-.2 0-.6.1-.9.4-.3.3-1.2 1.2-1.2 2.9s1.2 3.3 1.4 3.6c.2.2 2.4 3.7 5.9 5.2.8.4 1.5.6 2 .7.8.3 1.6.2 2.2.1.7-.1 1.8-.7 2-1.4.3-.7.3-1.3.2-1.4-.1-.2-.3-.2-.6-.4M16.1 26h-.1c-1.8 0-3.5-.5-5-1.4l-.4-.2-3.7 1 1-3.6-.2-.4A10 10 0 1 1 16.1 26m8.5-18.6A12 12 0 0 0 5.7 21.9L4 28l6.3-1.6A12 12 0 1 0 24.6 7.4"/></svg><span>Hablá con Joaco</span></a></div>
  </section>
  </main>
  <footer class="site-footer">
    <div class="footer-brand"><img src="/assets/m-commerce-mark.svg" alt="M Commerce"><div><strong>M COMMERCE</strong><span>Tu tienda online</span></div></div>
-   <div class="footer-links"><a href="#planes">Planes</a><a href="#como-funciona">Cómo funciona</a><a href="#comparacion">Simple vs PRO</a><a href="https://wa.me/5493329698591?text=Hola%20Ema%2C%20vi%20M%20Commerce%20y%20quiero%20asesoramiento." target="_blank" rel="noopener noreferrer">WhatsApp</a><a href="https://www.instagram.com/mcommercee/" target="_blank" rel="noopener noreferrer">Instagram</a></div>
+   <div class="footer-links"><a href="#planes">Planes</a><a href="#como-funciona">Cómo funciona</a><a href="#comparacion">Simple vs PRO</a><a href="https://wa.me/5491162760623?text=Hola%20Joaco%2C%20vi%20M%20Commerce%20y%20quiero%20asesoramiento." target="_blank" rel="noopener noreferrer">WhatsApp</a><a href="https://www.instagram.com/mcommercee/" target="_blank" rel="noopener noreferrer">Instagram</a></div>
    <small>© M Commerce · Plataforma de tiendas online.</small>
  </footer>
- <a class="floating-whatsapp" href="https://wa.me/5493329698591?text=Hola%20Ema%2C%20vi%20M%20Commerce%20y%20quiero%20asesoramiento." target="_blank" rel="noopener noreferrer" aria-label="Hablar con Ema por WhatsApp"><svg aria-hidden="true" viewBox="0 0 32 32" width="20" height="20"><path fill="currentColor" d="M19.1 17.4c-.3-.2-1.8-.9-2.1-1-.3-.1-.5-.2-.7.2-.2.3-.8 1-.9 1.2-.2.2-.3.2-.6.1-1.8-.9-3-1.7-4.2-3.8-.3-.5.3-.5.9-1.6.1-.2 0-.4 0-.6-.1-.2-.7-1.7-1-2.3-.3-.7-.6-.6-.8-.6h-.7c-.2 0-.6.1-.9.4-.3.3-1.2 1.2-1.2 2.9s1.2 3.3 1.4 3.6c.2.2 2.4 3.7 5.9 5.2.8.4 1.5.6 2 .7.8.3 1.6.2 2.2.1.7-.1 1.8-.7 2-1.4.3-.7.3-1.3.2-1.4-.1-.2-.3-.2-.6-.4M16.1 26h-.1c-1.8 0-3.5-.5-5-1.4l-.4-.2-3.7 1 1-3.6-.2-.4A10 10 0 1 1 16.1 26m8.5-18.6A12 12 0 0 0 5.7 21.9L4 28l6.3-1.6A12 12 0 1 0 24.6 7.4"/></svg><span>Hablá con Ema</span></a>
+ <a class="floating-whatsapp" href="https://wa.me/5491162760623?text=Hola%20Joaco%2C%20vi%20M%20Commerce%20y%20quiero%20asesoramiento." target="_blank" rel="noopener noreferrer" aria-label="Hablar con Joaco por WhatsApp"><svg aria-hidden="true" viewBox="0 0 32 32" width="20" height="20"><path fill="currentColor" d="M19.1 17.4c-.3-.2-1.8-.9-2.1-1-.3-.1-.5-.2-.7.2-.2.3-.8 1-.9 1.2-.2.2-.3.2-.6.1-1.8-.9-3-1.7-4.2-3.8-.3-.5.3-.5.9-1.6.1-.2 0-.4 0-.6-.1-.2-.7-1.7-1-2.3-.3-.7-.6-.6-.8-.6h-.7c-.2 0-.6.1-.9.4-.3.3-1.2 1.2-1.2 2.9s1.2 3.3 1.4 3.6c.2.2 2.4 3.7 5.9 5.2.8.4 1.5.6 2 .7.8.3 1.6.2 2.2.1.7-.1 1.8-.7 2-1.4.3-.7.3-1.3.2-1.4-.1-.2-.3-.2-.6-.4M16.1 26h-.1c-1.8 0-3.5-.5-5-1.4l-.4-.2-3.7 1 1-3.6-.2-.4A10 10 0 1 1 16.1 26m8.5-18.6A12 12 0 0 0 5.7 21.9L4 28l6.3-1.6A12 12 0 1 0 24.6 7.4"/></svg><span>Hablá con Joaco</span></a>
  </div>`;
  loadPrice();
 }
 function proRequest(){
  setSeo("M Commerce PRO · Solicitud comercial","Contanos sobre tu negocio y diseñamos una tienda online a medida.",location.origin+"/simple/pro");
- app.innerHTML=`<div class="shell">${nav()}<main class="auth-wrap card"><div class="eyebrow">M Commerce PRO</div><h1>Una tienda diseñada para tu negocio.</h1><p class="muted">Dejanos tus datos. El equipo de M Commerce revisará la solicitud para preparar una propuesta personalizada.</p><a class="btn whatsapp-btn full" href="https://wa.me/5493329698591?text=Hola%20Ema%2C%20quiero%20asesoramiento%20sobre%20M%20Commerce%20PRO." target="_blank" rel="noopener noreferrer">Hablá con Ema por WhatsApp</a><form id="pro-form">${field("lead_name","Tu nombre","text","","required maxlength=\"120\"")}${field("lead_business","Nombre del negocio","text","","required maxlength=\"120\"")}${field("lead_email","Email","email","","required maxlength=\"254\"")}${field("lead_phone","WhatsApp","tel","","required maxlength=\"40\"")}<div class="field"><label for="lead_details">¿Qué necesitás?</label><textarea id="lead_details" maxlength="2000" placeholder="Rubro, funciones o integraciones que necesitás"></textarea></div><button class="btn brand" type="submit">Enviar solicitud</button></form></main></div>`;
+ app.innerHTML=`<div class="shell">${nav()}<main class="auth-wrap card"><div class="eyebrow">M Commerce PRO</div><h1>Una tienda diseñada para tu negocio.</h1><p class="muted">Dejanos tus datos. El equipo de M Commerce revisará la solicitud para preparar una propuesta personalizada.</p><a class="btn whatsapp-btn full" href="https://wa.me/5491162760623?text=Hola%20Joaco%2C%20quiero%20asesoramiento%20sobre%20M%20Commerce%20PRO." target="_blank" rel="noopener noreferrer">Hablá con Joaco por WhatsApp</a><form id="pro-form">${field("lead_name","Tu nombre","text","","required maxlength=\"120\"")}${field("lead_business","Nombre del negocio","text","","required maxlength=\"120\"")}${field("lead_email","Email","email","","required maxlength=\"254\"")}${field("lead_phone","WhatsApp","tel","","required maxlength=\"40\"")}<div class="field"><label for="lead_details">¿Qué necesitás?</label><textarea id="lead_details" maxlength="2000" placeholder="Rubro, funciones o integraciones que necesitás"></textarea></div><button class="btn brand" type="submit">Enviar solicitud</button></form></main></div>`;
  document.getElementById("pro-form").onsubmit=async ev=>{ev.preventDefault();try{setBusy(ev.submitter,true);const body={name:document.getElementById("lead_name").value,business_name:document.getElementById("lead_business").value,email:document.getElementById("lead_email").value,phone:document.getElementById("lead_phone").value,details:document.getElementById("lead_details").value},res=await fetch(SUPABASE_URL+"/functions/v1/simple-pro-lead",{method:"POST",headers:{"content-type":"application/json","apikey":SUPABASE_KEY},body:JSON.stringify(body)}),out=await res.json();if(!res.ok)throw new Error(out.message||out.error);ev.currentTarget.innerHTML='<h2>Solicitud recibida</h2><p>Gracias. El equipo de M Commerce ya puede continuar el contacto comercial.</p>';toast("Solicitud enviada.")}catch(e){fail(e)}finally{setBusy(ev.submitter,false)}};
 }
 async function loadPrice(){try{const data=await rpc("simple_public_plan");if(data)document.getElementById("simple-price").innerHTML=`${money(data.monthly_price,data.currency_code)} <small>/ mes</small>`}catch(e){console.warn(e)}}
@@ -319,8 +319,20 @@ function subscriptionGate(site,sub={}){app.innerHTML=`<div class="app-shell"><he
 function planPanel(panel,siteId,sub){panel.innerHTML=`<div class="card"><h2>Mi plan</h2><div class="price">${money(sub?.amount||0,sub?.currency_code||"ARS")} <small>/ mes</small></div><p>Estado: <strong>${esc(sub?.status||"pending")}</strong></p><button id="subscribe" class="btn brand">Administrar suscripción</button></div>`;document.getElementById("subscribe").onclick=ev=>startSubscription(siteId,ev.currentTarget)}
 async function wizard(siteId,step=1,dash=null){
  dash=dash||await rpc("simple_dashboard",{p_site_id:siteId});const st=dash.settings||{},state={business_name:st.business_name||"",business_category:st.business_category||"",whatsapp_number:st.whatsapp_number||"",address:st.address||"",schedule:st.schedule||"",logo_url:st.logo_url||"",cover_url:st.cover_url||"",fulfillment_config:st.fulfillment_config||{pickup_enabled:true,shipping_enabled:false},payment_methods:st.payment_methods||{cash:true,transfer:true,mercadopago:false}};let current=Math.max(1,Math.min(10,step));
+ const canEditSlug=dash.site?.status==="draft";
+ let slug=String(dash.site?.slug||""),slugTouched=false;
+ const hasGeneratedSlug=canEditSlug&&/^tienda-[0-9a-f]{12}(?:-[0-9a-f]{6})?$/.test(slug);
+ if(hasGeneratedSlug)slug=slugify(state.business_name).slice(0,60);
+ const [catExisting,prodExisting]=await Promise.all([
+   sb.from("product_categories").select("id").eq("site_id",siteId).eq("active",true).is("archived_at",null).limit(1),
+   sb.from("products").select("id").eq("site_id",siteId).eq("active",true).limit(1)
+ ]);
+ if(catExisting.error)throw catExisting.error;
+ if(prodExisting.error)throw prodExisting.error;
+ let hasCategory=Boolean(catExisting.data?.length);
+ let hasProduct=Boolean(prodExisting.data?.length);
  const render=()=>{const content=[
-  ["Nombre del comercio",field("w_name","¿Cómo se llama tu comercio?","text",state.business_name,"required")],
+   ["Nombre del comercio",field("w_name","¿Cómo se llama tu comercio?","text",state.business_name,'required minlength="2" maxlength="100"')+(canEditSlug?field("w_slug","Enlace de tu tienda","text",slug,'required minlength="3" maxlength="60" pattern="[a-z0-9]+(-[a-z0-9]+)*"')+'<p class="hint">Tu enlace: '+esc(window.M_COMMERCE_OFFICIAL_ORIGIN)+'/tienda/<strong id="w_slug_preview">'+esc(slug)+'</strong></p>':'<p class="hint">Enlace publicado: '+esc(dash.site?.slug||"")+'. No se modifica desde el asistente.</p>')],
   ["Logo y portada",`<div class="upload-grid"><div class="field"><label for="w_logo">Logo del comercio</label>${state.logo_url?`<img class="upload-preview logo-preview" src="${esc(state.logo_url)}" alt="Logo actual">`:""}<input id="w_logo" type="file" accept="image/jpeg,image/png,image/webp,image/avif"><span class="hint">JPG, PNG, WebP o AVIF · máx. 8 MB.</span></div><div class="field"><label for="w_cover">Imagen de portada</label>${state.cover_url?`<img class="upload-preview cover-preview" src="${esc(state.cover_url)}" alt="Portada actual">`:""}<input id="w_cover" type="file" accept="image/jpeg,image/png,image/webp,image/avif"><span class="hint">Se muestra arriba de tu tienda.</span></div></div>`],
   ["Rubro",field("w_category","¿A qué se dedica?","text",state.business_category,"required placeholder=\"Ej: Indumentaria, comidas, ferretería\"")],
   ["WhatsApp",field("w_phone","Número con código de área","tel",state.whatsapp_number,"required")],
@@ -328,14 +340,23 @@ async function wizard(siteId,step=1,dash=null){
   ["Modalidad de entrega",`<div class="option-grid"><button type="button" class="option fulfillment ${state.fulfillment_config.pickup_enabled?"selected":""}" data-k="pickup_enabled">Retiro</button><button type="button" class="option fulfillment ${state.fulfillment_config.shipping_enabled?"selected":""}" data-k="shipping_enabled">Delivery</button></div>`],
   ["Métodos de pago",`<div class="option-grid">${[["cash","Efectivo"],["transfer","Transferencia"]].map(([k,l])=>`<button type="button" class="option payment ${state.payment_methods[k]?"selected":""}" data-k="${k}">${l}</button>`).join("")}</div>`],
   ["Horarios",`<div class="field"><label for="w_schedule">Horarios de atención</label><textarea id="w_schedule" required>${esc(state.schedule)}</textarea></div>`],
-  ["Primera categoría",field("w_first_category","Nombre de la categoría","text","","required placeholder=\"Ej: Remeras\"")],
-  ["Primer producto",`${field("w_product_name","Nombre del producto","text","","required")}${field("w_product_price","Precio","number","","required min=\"0\" step=\"0.01\"")}<div class="field"><label>Foto opcional</label><input id="w_product_image" type="file" accept="image/jpeg,image/png,image/webp,image/avif"></div>`]
+   ["Primera categoría",hasCategory?'<p class="muted">Ya tenés categorías creadas. Podés gestionarlas después desde tu panel.</p>':field("w_first_category","Nombre de la categoría","text","",'required maxlength="80" placeholder="Ej: Remeras"')],
+   ["Primer producto",hasProduct?'<p class="muted">Ya tenés productos en tu tienda. Podés gestionarlos desde Productos al terminar.</p>':field("w_product_name","Nombre del producto","text","",'required maxlength="160"')+field("w_product_price","Precio","number","",'required min="0" step="0.01"')+'<div class="field"><label>Foto opcional</label><input id="w_product_image" type="file" accept="image/jpeg,image/png,image/webp,image/avif"></div>']
  ][current-1];
  app.innerHTML=`<div class="app-shell"><header class="app-head"><div class="inner"><span class="brand">M COMMERCE <small>SIMPLE</small></span><button id="logout" class="mini">Salir</button></div></header><main class="app-main"><form id="wizard" class="card wizard"><div class="eyebrow">Paso ${current} de 10</div><div class="progress"><div style="width:${current*10}%"></div></div><section class="wizard-step"><h2>${content[0]}</h2>${content[1]}</section><div class="wizard-actions"><button class="btn secondary" type="button" id="back" ${current===1?"disabled":""}>Atrás</button><button class="btn brand" type="submit">${current===10?"Terminar":"Continuar"}</button></div></form></main></div>`;
  document.getElementById("logout").onclick=logout;document.getElementById("back").onclick=()=>{current--;render()};
+ if(current===1&&canEditSlug){
+   const nameInput=document.getElementById("w_name"),slugInput=document.getElementById("w_slug"),preview=document.getElementById("w_slug_preview");
+   nameInput.oninput=()=>{if(hasGeneratedSlug&&!slugTouched){slug=slugify(nameInput.value).slice(0,60);slugInput.value=slug;preview.textContent=slug||"tu-tienda";}};
+   slugInput.oninput=()=>{slugTouched=true;slug=slugify(slugInput.value).slice(0,60);slugInput.value=slug;preview.textContent=slug||"tu-tienda";};
+ }
  document.querySelectorAll(".fulfillment,.payment").forEach(b=>b.onclick=()=>{const target=b.classList.contains("payment")?state.payment_methods:state.fulfillment_config;target[b.dataset.k]=!target[b.dataset.k];b.classList.toggle("selected",target[b.dataset.k])});
  document.getElementById("wizard").onsubmit=async ev=>{ev.preventDefault();try{setBusy(ev.submitter,true);
-  if(current===1)state.business_name=document.getElementById("w_name").value.trim();
+  if(current===1){
+   state.business_name=document.getElementById("w_name").value.trim();
+   if(state.business_name.length<2||state.business_name.length>100)throw new Error("El nombre debe tener entre 2 y 100 caracteres.");
+   if(canEditSlug){slug=String(document.getElementById("w_slug").value||"").trim().toLowerCase();if(slug.length<3||slug.length>60||!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(slug))throw new Error("El enlace debe tener de 3 a 60 caracteres: letras, números y guiones.");}
+ }
   if(current===2){const logo=document.getElementById("w_logo").files[0],cover=document.getElementById("w_cover").files[0];if(logo)state.logo_url=await upload(siteId,logo,"brand");if(cover)state.cover_url=await upload(siteId,cover,"cover")}
   if(current===3)state.business_category=document.getElementById("w_category").value.trim();
   if(current===4)state.whatsapp_number=document.getElementById("w_phone").value.trim();
@@ -343,9 +364,25 @@ async function wizard(siteId,step=1,dash=null){
   if(current===6&&!state.fulfillment_config.pickup_enabled&&!state.fulfillment_config.shipping_enabled)throw new Error("Elegí retiro, delivery o ambas modalidades.");
   if(current===7&&!Object.values(state.payment_methods).some(Boolean))throw new Error("Elegí al menos un método de pago.");
   if(current===8)state.schedule=document.getElementById("w_schedule").value.trim();
-  if(current===9)await rpc("simple_upsert_category",{p_site_id:siteId,p_category:{name:document.getElementById("w_first_category").value.trim(),active:true}});
-  if(current===10){const {data:cats}=await sb.from("product_categories").select("id,name").eq("site_id",siteId).eq("active",true).order("created_at").limit(1);let image_url="";const f=document.getElementById("w_product_image").files[0];if(f)image_url=await upload(siteId,f,"products");await rpc("simple_upsert_product",{p_site_id:siteId,p_product:{name:document.getElementById("w_product_name").value.trim(),price:Number(document.getElementById("w_product_price").value),category_id:cats?.[0]?.id||null,category:cats?.[0]?.name||"Productos",image_url,active:true}});const done=await rpc("simple_complete_onboarding",{p_site_id:siteId});if(!done.ready)throw new Error("Falta completar: "+done.missing.join(", "));toast("Tu tienda está lista.");const sites=await rpc("platform_my_sites");return dashboard((Array.isArray(sites)?sites:sites.sites).find(x=>x.id===siteId))}
-  await rpc("simple_save_store_profile",{p_site_id:siteId,p_profile:{...state,onboarding_step:Math.min(10,current+1)}});current++;render();
+  if(current===9&&!hasCategory){await rpc("simple_upsert_category",{p_site_id:siteId,p_category:{name:document.getElementById("w_first_category").value.trim(),active:true}});hasCategory=true;}
+  if(current===10){
+    if(!hasProduct){
+      const {data:cats,error:catsError}=await sb.from("product_categories").select("id,name").eq("site_id",siteId).eq("active",true).is("archived_at",null).order("created_at").limit(1);
+      if(catsError)throw catsError;
+      if(!cats?.[0]?.id)throw new Error("Creá una categoría antes de agregar productos.");
+      let image_url="";
+      const f=document.getElementById("w_product_image").files[0];
+      if(f)image_url=await upload(siteId,f,"products");
+      await rpc("simple_upsert_product",{p_site_id:siteId,p_product:{name:document.getElementById("w_product_name").value.trim(),price:Number(document.getElementById("w_product_price").value),category_id:cats[0].id,category:cats[0].name,image_url,active:true}});
+      hasProduct=true;
+    }
+    const done=await rpc("simple_complete_onboarding",{p_site_id:siteId});
+    if(!done.ready)throw new Error("Falta completar: "+(done.missing||[]).join(", "));
+    toast("Tu tienda está lista.");
+    const sites=await rpc("platform_my_sites");
+    return dashboard((Array.isArray(sites)?sites:sites.sites).find(x=>x.id===siteId));
+  }
+  await rpc("simple_save_store_profile",{p_site_id:siteId,p_profile:{...state,onboarding_step:Math.min(10,current+1)}});if(current===1&&canEditSlug){const saved=await rpc("simple_set_draft_slug",{p_site_id:siteId,p_slug:slug});dash.site.slug=saved.slug;}current++;render();
  }catch(e){fail(e)}finally{setBusy(ev.submitter,false)}};
  };render();
 }
