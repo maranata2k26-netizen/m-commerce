@@ -54,6 +54,9 @@ Deno.serve(async(req)=>{
     const token=await exchangeCode(code,found.data.code_verifier);
     const profile=await mpProfile(String(token.access_token));
     const mpUserId=String(token.user_id||profile.id||"");if(!mpUserId)throw new Error("NO_MP_USER");
+    const merchantUsage=await admin.from("mercadopago_connections").select("site_id").eq("mp_user_id",mpUserId).eq("status","connected").limit(1).maybeSingle();
+    if(merchantUsage.error)throw merchantUsage.error;
+    if(merchantUsage.data)return redirect(target(callbackFlow,false,"account_in_use"));
     const expires=token.expires_in?new Date(Date.now()+Number(token.expires_in)*1000).toISOString():null;
     const saved=await admin.from("platform_billing_accounts").upsert({provider:"mercadopago",mp_user_id:mpUserId,access_token:token.access_token,refresh_token:token.refresh_token||null,token_type:token.token_type||"Bearer",scope:token.scope||"",expires_at:expires,status:"pending_confirmation",connected_by:found.data.user_id,expected_email:email(found.data.expected_email)||null,account_email:email(profile.email)||null,account_nickname:String(profile.nickname||""),account_first_name:String(profile.first_name||""),account_last_name:String(profile.last_name||""),confirmed_at:null,updated_at:new Date().toISOString()},{onConflict:"provider"});
     if(saved.error)throw saved.error;
