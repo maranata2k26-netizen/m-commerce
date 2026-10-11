@@ -389,7 +389,7 @@
     let extra={brand:"",attributes:{}};
 
     if(editingProductId){
-      const variantsResult=await client.from("product_variants").select("name,price_delta,stock_tracking,stock_quantity,attributes,sort_order").eq("site_id",id).eq("product_id",editingProductId).order("sort_order");
+      const variantsResult=await client.from("product_variants").select("id,name,price_delta,stock_tracking,stock_quantity,attributes,sort_order,available,sku").eq("site_id",id).eq("product_id",editingProductId).order("sort_order");
       if(!variantsResult.error)variants=variantsResult.data||[];
       const productResult=await client.from("products").select("brand,attributes").eq("site_id",id).eq("id",editingProductId).maybeSingle();
       if(!productResult.error&&productResult.data)extra=productResult.data;
@@ -415,11 +415,17 @@
       const values=[...rows.querySelectorAll(".mc-variant-row")].map((row,index)=>{
         const stock=row.querySelector(".mc-v-stock").value;
         return {
+          ...(row._mcExistingVariant?.id?{
+            id:row._mcExistingVariant.id,
+            attributes:row._mcExistingVariant.attributes||{},
+            sku:row._mcExistingVariant.sku||null,
+            available:row._mcExistingVariant.available!==false,
+            ...(row._mcExistingVariant.stock_tracking?{expected_stock_quantity:row._mcExistingVariant.stock_quantity}:{}),
+          }:{attributes:{}}),
           name:row.querySelector(".mc-v-name").value.trim(),
           price_delta:Number(row.querySelector(".mc-v-price").value||0),
           stock_tracking:stock!=="",
           stock_quantity:stock===""?null:Number(stock),
-          attributes:{},
           sort_order:index
         };
       }).filter(value=>value.name);
@@ -435,6 +441,7 @@
     const addVariant=(variant={})=>{
       const row=document.createElement("div");
       row.className="mc-variant-row";
+      row._mcExistingVariant=variant?.id?{...variant}:null;
       const placeholder=rubro==="Zapatillas"?"Talle 40":rubro==="Ropa"?"Talle M · Negro":rubro==="Ferretería"?"Medida 20 mm":"Opción";
       row.innerHTML=`<label>Variante<input class="mc-v-name" value="${esc(variant.name||"")}" placeholder="${esc(placeholder)}"></label><label>Adicional $<input class="mc-v-price" type="number" step="0.01" value="${Number(variant.price_delta||0)}"></label><label>Stock<input class="mc-v-stock" type="number" min="0" step="1" value="${variant.stock_tracking&&variant.stock_quantity!=null?Number(variant.stock_quantity):""}" placeholder="Opcional"></label><button type="button" class="mc-danger-mini mc-v-remove">Quitar</button>`;
       rows.appendChild(row);
