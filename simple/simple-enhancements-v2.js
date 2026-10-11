@@ -24,6 +24,31 @@
   let storefrontApplied=false;
 
   const esc=value=>String(value??"").replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[char]));
+  // Keep the original variant ID and inventory snapshot on every edit.
+  // This is what prevents a renamed size/color from becoming a new stock record.
+  function variantPayloadFromRow(row,index){
+    const previous=row._mcExistingVariant||null;
+    const name=row.querySelector(".mc-v-name").value.trim();
+    if(previous?.id&&!name)throw new Error("Una variante existente no puede quedar sin nombre. Usá Quitar para eliminarla.");
+    const stock=row.querySelector(".mc-v-stock").value;
+    const priceValue=row.querySelector(".mc-v-price").value;
+    const priceDelta=Number(priceValue||0);
+    if(!Number.isFinite(priceDelta))throw new Error("Ingresá un adicional válido para la variante.");
+    if(stock!==""&&(!/^\d+$/.test(stock)||!Number.isSafeInteger(Number(stock))||Number(stock)<0))throw new Error("El stock de una variante debe ser un número entero no negativo.");
+    return {
+      ...(previous?.id?{
+        id:previous.id,attributes:previous.attributes||{},
+        sku:previous.sku||null,
+        ...(previous.stock_tracking?{expected_stock_quantity:previous.stock_quantity}:{}),
+      }:{attributes:{}}),
+      available:row.querySelector(".mc-v-available").checked,
+      name,
+      price_delta:priceDelta,
+      stock_tracking:stock!=="",
+      stock_quantity:stock===""?null:Number(stock),
+      sort_order:index
+    };
+  }
   const dash=()=>window.__mcSimpleActualDashboard||null;
   const simpleMeta=(value=dash())=>value?.settings?.site_design?.simple||{};
 
@@ -68,8 +93,8 @@
       .mc-color-input{display:grid;grid-template-columns:46px 1fr;gap:9px;align-items:center}.mc-color-input input[type=color]{padding:2px;min-height:46px;width:46px}
       .mc-preview-links{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.mc-design-panel .mc-preset-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
       .mc-danger-mini{border:1px solid #f1c6cc;background:#fff;color:#b42334;border-radius:9px;padding:8px 10px;font-weight:800}
-      .mc-variant-editor{margin:16px 0;border-top:1px solid var(--line);padding-top:16px}.mc-variant-row{display:grid;grid-template-columns:minmax(150px,1fr) 120px 120px auto;gap:8px;align-items:end;margin:8px 0}
-      .mc-variant-row label{display:grid;gap:5px;font-size:11px;font-weight:800;color:var(--muted)}.mc-variant-row input{border:1px solid #ccd3dd;border-radius:10px;padding:10px;min-width:0}
+      .mc-variant-editor{margin:16px 0;border-top:1px solid var(--line);padding-top:16px}.mc-variant-row{display:grid;grid-template-columns:minmax(150px,1fr) 110px 110px 105px auto;gap:8px;align-items:end;margin:8px 0}
+      .mc-variant-row label{display:grid;gap:5px;font-size:11px;font-weight:800;color:var(--muted)}.mc-variant-row input{border:1px solid #ccd3dd;border-radius:10px;padding:10px;min-width:0}.mc-variant-row input[type=checkbox]{width:18px;height:18px;min-height:18px;padding:0;margin:10px 0 7px}
       .mc-product-tech{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:12px 0}.mc-product-tech .field{margin:0}
       .mc-instagram-link{display:inline-flex;margin-top:8px;color:inherit;font-weight:800;text-decoration:none;opacity:.9}
       .mc-enhancement-toast{position:fixed;z-index:100000;left:50%;bottom:22px;transform:translate(-50%,120px);background:#0b1220;color:#fff;padding:12px 16px;border-radius:12px;box-shadow:0 16px 40px rgba(0,0,0,.25);transition:.2s;max-width:90vw}
@@ -93,7 +118,7 @@
     installed=true;
     baseRpc=client.rpc.bind(client);
     client.rpc=async(name,args={},opts)=>{
-      if(name==="simple_upsert_product"&&variantContext&&document.getElementById("product-edit")&&args?.p_site_id===variantContext.siteId){
+      if(name==="simple_upsert_product"&&variantContext&&variantContext.form===document.getElementById("product-edit")&&variantContext.form?.dataset.mcEnhanced==="ready"&&args?.p_site_id===variantContext.siteId){
         const incoming=args?.p_product||{};
         const same=(incoming.id||null)===(variantContext.productId||null);
         if(same){
@@ -314,6 +339,7 @@
       if(button.dataset.mcWire)return;
       button.dataset.mcWire="1";
       button.addEventListener("click",()=>{
+        variantContext=null;productExtras=null;
         try{editingProductId=JSON.parse(button.dataset.json).id;}
         catch{editingProductId=null;}
       },true);
@@ -343,7 +369,7 @@
     const newProduct=document.getElementById("new-product");
     if(newProduct&&!newProduct.dataset.mcWire){
       newProduct.dataset.mcWire="1";
-      newProduct.addEventListener("click",()=>{editingProductId=null;},true);
+      newProduct.addEventListener("click",()=>{editingProductId=null;variantContext=null;productExtras=null;},true);
     }
 
     document.querySelectorAll(".edit-category").forEach(button=>{
@@ -380,21 +406,24 @@
     const form=document.getElementById("product-edit");
     const textarea=document.getElementById("p_variants");
     if(!form||!textarea||form.dataset.mcEnhanced)return;
-    form.dataset.mcEnhanced="1";
-
+    form.dataset.mcEnhanced="loading";
+    const currentEditingId=editingProductId;
+    try{
     const id=await currentSiteId();
     const current=dash();
     const rubro=current?.settings?.business_category||"Catálogo general";
     let variants=[];
     let extra={brand:"",attributes:{}};
 
-    if(editingProductId){
-      const variantsResult=await client.from("product_variants").select("name,price_delta,stock_tracking,stock_quantity,attributes,sort_order").eq("site_id",id).eq("product_id",editingProductId).order("sort_order");
-      if(!variantsResult.error)variants=variantsResult.data||[];
-      const productResult=await client.from("products").select("brand,attributes").eq("site_id",id).eq("id",editingProductId).maybeSingle();
+    if(currentEditingId){
+      const variantsResult=await client.from("product_variants").select("id,name,price_delta,stock_tracking,stock_quantity,attributes,sort_order,available,sku").eq("site_id",id).eq("product_id",currentEditingId).eq("active",true).order("sort_order");
+      if(variantsResult.error)throw variantsResult.error;
+      variants=variantsResult.data||[];
+      const productResult=await client.from("products").select("brand,attributes").eq("site_id",id).eq("id",currentEditingId).maybeSingle();
       if(!productResult.error&&productResult.data)extra=productResult.data;
     }
 
+    if(form!==document.getElementById("product-edit"))return;
     const oldField=textarea.closest(".field");
     oldField.style.display="none";
     const holder=document.createElement("section");
@@ -411,20 +440,20 @@
     }
 
     const rows=holder.querySelector("#mc-variant-rows");
+    let variantValidationError="";
     const sync=()=>{
-      const values=[...rows.querySelectorAll(".mc-variant-row")].map((row,index)=>{
-        const stock=row.querySelector(".mc-v-stock").value;
-        return {
-          name:row.querySelector(".mc-v-name").value.trim(),
-          price_delta:Number(row.querySelector(".mc-v-price").value||0),
-          stock_tracking:stock!=="",
-          stock_quantity:stock===""?null:Number(stock),
-          attributes:{},
-          sort_order:index
-        };
-      }).filter(value=>value.name);
-      variantContext={siteId:id,productId:editingProductId||null,variants:values};
+      let values;
+      try{
+        values=[...rows.querySelectorAll(".mc-variant-row")].map(variantPayloadFromRow).filter(value=>value.name);
+        variantValidationError="";
+      }catch(error){
+        variantValidationError=error instanceof Error?error.message:String(error);
+        variantContext=null;
+        return;
+      }
+      variantContext={form,siteId:id,productId:currentEditingId||null,variants:values};
       textarea.value=values.map(value=>`${value.name} | ${value.price_delta}`).join("\n");
+      form.dataset.mcEnhanced="ready";
       productExtras=technical?{
         brand:document.getElementById("mc-prod-brand")?.value||"",
         model:document.getElementById("mc-prod-model")?.value||"",
@@ -432,11 +461,21 @@
       }:null;
     };
 
+    form.addEventListener("submit",event=>{
+      sync();
+      if(variantValidationError){
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        notify(variantValidationError,true);
+      }
+    },true);
+
     const addVariant=(variant={})=>{
       const row=document.createElement("div");
       row.className="mc-variant-row";
+      row._mcExistingVariant=variant?.id?{...variant}:null;
       const placeholder=rubro==="Zapatillas"?"Talle 40":rubro==="Ropa"?"Talle M · Negro":rubro==="Ferretería"?"Medida 20 mm":"Opción";
-      row.innerHTML=`<label>Variante<input class="mc-v-name" value="${esc(variant.name||"")}" placeholder="${esc(placeholder)}"></label><label>Adicional $<input class="mc-v-price" type="number" step="0.01" value="${Number(variant.price_delta||0)}"></label><label>Stock<input class="mc-v-stock" type="number" min="0" step="1" value="${variant.stock_tracking&&variant.stock_quantity!=null?Number(variant.stock_quantity):""}" placeholder="Opcional"></label><button type="button" class="mc-danger-mini mc-v-remove">Quitar</button>`;
+      row.innerHTML=`<label>Variante<input class="mc-v-name" value="${esc(variant.name||"")}" placeholder="${esc(placeholder)}"></label><label>Adicional $<input class="mc-v-price" type="number" step="0.01" value="${Number(variant.price_delta||0)}"></label><label>Stock<input class="mc-v-stock" type="number" min="0" step="1" value="${variant.stock_tracking&&variant.stock_quantity!=null?Number(variant.stock_quantity):""}" placeholder="Opcional"></label><label>Disponible<input class="mc-v-available" type="checkbox" ${variant.available!==false?"checked":""}></label><button type="button" class="mc-danger-mini mc-v-remove">Quitar</button>`;
       rows.appendChild(row);
       row.querySelector(".mc-v-remove").onclick=()=>{row.remove();sync();};
       row.querySelectorAll("input").forEach(input=>input.addEventListener("input",sync));
@@ -447,6 +486,14 @@
     holder.querySelector("#mc-add-variant").onclick=()=>addVariant({});
     if(technical)form.querySelectorAll("#mc-prod-brand,#mc-prod-model,#mc-prod-measure").forEach(input=>input.addEventListener("input",sync));
     sync();
+    if(!variantValidationError)form.dataset.mcEnhanced="ready";
+    }catch(error){
+      if(form===document.getElementById("product-edit")){
+        form.dataset.mcEnhanced="error";
+        notify("No se pudo cargar el editor completo de variantes. Actualizá la página antes de guardar el producto.",true);
+      }
+      console.warn("simple_product_editor",error);
+    }
   }
 
   async function applyStorefrontDesign(){
