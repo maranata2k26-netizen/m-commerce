@@ -610,6 +610,22 @@ if(name.length<2||name.length>120)throw new Error("Ingresá un nombre válido.")
 if(phone.length<8||phone.length>15)throw new Error("Ingresá un teléfono válido, con código de área.");
 if(!["pickup","delivery"].includes(delivery)||!["cash","transfer","mercadopago"].includes(method))throw new Error("Elegí entrega y forma de pago.");
 if(delivery==="delivery"&&body.delivery_address.trim().length<5)throw new Error("Ingresá la dirección de entrega.");
+// Delivery details must be part of the attempt fingerprint: changing the map pin,
+// apartment or instructions after a failed checkout must create a NEW attempt ID.
+if(delivery==="delivery"){
+ const loc=window.__mcDeliveryLocation;
+ const lat=loc?.lat==null?NaN:Number(loc.lat),lng=loc?.lng==null?NaN:Number(loc.lng);
+ const valid=Number.isFinite(lat)&&Number.isFinite(lng)&&lat>=-90&&lat<=90&&lng>=-180&&lng<=180;
+ if(valid){
+   body.delivery_latitude=lat;body.delivery_longitude=lng;
+   body.delivery_place_id=String(loc.place_id||"");
+   body.delivery_address_formatted=String(loc.formatted||body.delivery_address);
+   body.delivery_address_source=loc.source==="google"?"google":"manual_map";
+   if(loc.formatted)body.delivery_address=String(loc.formatted);
+ }else body.delivery_address_source="manual";
+ body.delivery_unit=String(document.getElementById("mc_delivery_unit")?.value||"");
+ body.delivery_instructions=String(document.getElementById("mc_delivery_instructions")?.value||"");
+}
 const fingerprint=JSON.stringify(body);
 if(!checkoutAttemptId||fingerprint!==lastCheckoutPayload){checkoutAttemptId=crypto.randomUUID();lastCheckoutPayload=fingerprint;}
 body.checkout_attempt_id=checkoutAttemptId;
