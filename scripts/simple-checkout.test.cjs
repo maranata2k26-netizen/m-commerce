@@ -17,7 +17,7 @@ const vidA='123e4567-e89b-42d3-a456-426614174001';
 const vidB='123e4567-e89b-42d3-a456-426614174002';
 function harness(options={}){
  const data={site:{id:'123e4567-e89b-42d3-a456-426614174003',slug:'sample-store',name:'Commerce QA',currency_code:'ARS'},
-  settings:{payment_methods:{cash:true,transfer:true,mercadopago:false},fulfillment_config:{pickup_enabled:true,shipping_enabled:true}},
+  settings:{payment_methods:{cash:true,transfer:true,mercadopago:false},delivery_fee:options.deliveryFee??0,fulfillment_config:{pickup_enabled:true,shipping_enabled:true}},
   products:[{id:pid,name:'Remera',price:1000,active:true}],
   variants:[{id:vidA,product_id:pid,name:'Negro',price_delta:0,available:true},
            {id:vidB,product_id:pid,name:'Blanco',price_delta:100,available:true}],
@@ -31,14 +31,14 @@ function harness(options={}){
  const inputs={customer_name:'Marina Test',customer_phone:'1162760623',delivery_method:'pickup',delivery_address:'',payment_method:'cash'};
  function getElementById(id){
   if(id==='cart-bar')return app.innerHTML.includes('id="cart-bar"')?cartBar:null;
-  if(!elements.has(id))elements.set(id,{id,value:inputs[id]??'',dataset:{},disabled:false,onclick:null});
+  if(!elements.has(id))elements.set(id,{id,value:inputs[id]??'',dataset:{},disabled:false,onclick:null,addEventListener(type,handler){this['on'+type]=handler;}});
   return elements.get(id);
  }
  function newDrawer(){
   const close={onclick:null};
   const d={className:'',innerHTML:'',removed:false,
    remove(){this.removed=true;},
-   querySelector(q){if(q==='.close')return close;if(q==='#checkout')return forms.checkout;return null;},
+   querySelector(q){if(q==='.close')return close;if(q==='#checkout')return forms.checkout;if(q.startsWith('#'))return getElementById(q.slice(1));return null;},
    querySelectorAll(q){
     if(q!=='.q')return [];
     d.controls=[...d.innerHTML.matchAll(/<button class="mini q" data-key="([^"]+)" data-d="([^"]+)"/g)]
@@ -167,4 +167,50 @@ test('offline checkout database refuses to change payment method when replayed',
  assert.match(migration,/coalesce\(\(v_result->>'idempotent_replay'\)::boolean,false\)/);
  assert.match(migration,/o\.payment_method is distinct from p_payment_method/);
  assert.match(migration,/public\.create_checkout_order_v117/);
+});
+
+
+test('changing map pin or delivery instructions changes checkout attempt before request submission',async()=>{
+ const h=harness({failCalls:3});await h.init();h.add(vidA);h.openCart();
+ h.setInput('delivery_method','delivery');
+ h.setInput('delivery_address','Av Siempre Viva 1234, Merlo');
+ h.context.window.__mcDeliveryLocation={lat:-34.665,lng:-58.726,formatted:'Av Siempre Viva 1234, Merlo',source:'search',place_id:'place-1'};
+ await h.forms.checkout.onsubmit(submit());
+ assert.equal(h.requests.length,1);
+ assert.equal(h.requests[0].delivery_address_source,'manual_map');
+ assert.equal(h.requests[0].delivery_latitude,-34.665);
+ h.context.window.__mcDeliveryLocation={lat:-34.666,lng:-58.727,formatted:'Av Siempre Viva 1234, Merlo',source:'search',place_id:'place-2'};
+ await h.forms.checkout.onsubmit(submit());
+ assert.equal(h.requests.length,2);
+ assert.notEqual(h.requests[0].checkout_attempt_id,h.requests[1].checkout_attempt_id);
+ h.setInput('mc_delivery_instructions','Portón rojo');
+ await h.forms.checkout.onsubmit(submit());
+ assert.equal(h.requests.length,3);
+ assert.notEqual(h.requests[1].checkout_attempt_id,h.requests[2].checkout_attempt_id);
+ assert.equal(h.requests[2].delivery_instructions,'Portón rojo');
+});
+
+test('manual delivery has no invented coordinates and remains within the server contract',async()=>{
+ const h=harness({failCalls:1});await h.init();h.add(vidA);h.openCart();
+ h.setInput('delivery_method','delivery');
+ h.setInput('delivery_address','Calle 1234, Merlo');
+ await h.forms.checkout.onsubmit(submit());
+ const p=h.requests[0];
+ assert.equal(p.delivery_address_source,'manual');
+ assert.equal(Object.hasOwn(p,'delivery_latitude'),false);
+ assert.equal(Object.hasOwn(p,'delivery_longitude'),false);
+});
+
+
+test('checkout quote shows the merchant delivery fee, and pickup remains fee-free',async()=>{
+ const h=harness({deliveryFee:120.5});await h.init();h.add(vidA);h.openCart();
+ const delivery=h.context.document.getElementById('delivery_method');
+ const total=h.context.document.getElementById('mc-grand-total');
+ const charge=h.context.document.getElementById('mc-shipping-charge');
+ assert.equal(total.textContent,'Total estimado: $1000');
+ delivery.value='delivery';delivery.onchange();
+ assert.equal(total.textContent,'Total estimado: $1120.5');
+ assert.equal(charge.textContent,'Envío: $120.5');
+ delivery.value='pickup';delivery.onchange();
+ assert.equal(total.textContent,'Total estimado: $1000');
 });

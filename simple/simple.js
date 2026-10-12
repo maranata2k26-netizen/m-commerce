@@ -402,9 +402,63 @@ async function openPanel(kind,siteId,dash){
   if(kind==="share")return sharePanel(panel,dash.site.slug);
   if(kind==="plan")return planPanel(panel,siteId,dash.subscription);
   if(kind==="payments")return paymentsPanel(panel,siteId,dash);
+  if(kind==="delivery")return deliveryPanel(panel,siteId,dash);
   panel.innerHTML=`<div class="card"><div class="section-head"><h2>${esc({store:"Mi tienda",payments:"Pagos",delivery:"Entregas",hours:"Horarios"}[kind])}</h2></div><p class="muted">Esta información se administra desde el asistente simple.</p><button id="edit-profile" class="btn">Editar configuración</button></div>`;
   document.getElementById("edit-profile").onclick=()=>wizard(siteId,1,dash);
  }catch(e){panel.innerHTML="";fail(e)}
+}
+
+async function deliveryPanel(panel,siteId,dash){
+ let fresh=await rpc("simple_dashboard",{p_site_id:siteId});
+ const settings=fresh.settings||{},config=settings.fulfillment_config||{};
+ const fee=Number(settings.delivery_fee??0);
+ panel.innerHTML=`<form id="simple-delivery-settings" class="card">
+ <div class="section-head"><h2>Retiro y delivery</h2><span class="status">Configuración de tu comercio</span></div>
+ <p class="muted">Definí cómo entregás los pedidos. El precio del envío es fijo y se calcula en el servidor al confirmar la compra.</p>
+ <label class="field"><span><input type="checkbox" id="simple-pickup" ${config.pickup_enabled!==false?"checked":""}> Permitir retiro en el local</span></label>
+ <label class="field"><span><input type="checkbox" id="simple-shipping" ${config.shipping_enabled===true?"checked":""}> Ofrecer delivery</span></label>
+ <div class="field"><label for="simple-shipping-fee">Costo fijo de envío</label><input id="simple-shipping-fee" inputmode="decimal" type="number" min="0" max="10000000" step="0.01" value="${esc(Number.isFinite(fee)&&fee>=0?String(fee):"0")}" required><p class="hint">Si es gratis, poné 0. No se cobra cuando el cliente elige retiro.</p></div>
+ <div class="field"><label for="simple-coverage">Zonas / barrios donde entregás (informativo)</label>
+ <textarea id="simple-coverage" maxlength="500" rows="3" placeholder="Ej: Merlo centro, San Antonio de Padua, Libertad">${esc(settings.delivery_info||"")}</textarea>
+ <p class="hint">Este texto orienta al cliente; aún no bloquea automáticamente pedidos fuera de la zona. Confirmá la cobertura antes de despachar.</p></div>
+ <button class="btn brand" id="simple-delivery-save" type="submit">Guardar entregas</button></form>`;
+ const form=panel.querySelector("#simple-delivery-settings");
+ form.onsubmit=async event=>{
+  event.preventDefault();
+  const button=panel.querySelector("#simple-delivery-save");
+  const pickup=panel.querySelector("#simple-pickup").checked;
+  const shipping=panel.querySelector("#simple-shipping").checked;
+  const feeString=panel.querySelector("#simple-shipping-fee").value.trim();
+  const value=Number(feeString);
+  const coverage=panel.querySelector("#simple-coverage").value.trim();
+  if(!pickup&&!shipping)return toast("Habilitá retiro, delivery o ambas opciones.",true);
+  if(!feeString||!Number.isFinite(value)||value<0||value>10000000||Math.abs(value-Math.round(value*100)/100)>1e-8)
+     return toast("Ingresá un costo de envío válido, sin valores negativos.",true);
+  if(coverage.length>500)return toast("La cobertura no puede superar 500 caracteres.",true);
+  try{
+   setBusy(button,true);
+   const result=await rpc("simple_update_delivery_settings",{
+    p_site_id:siteId,p_config:{pickup_enabled:pickup,shipping_enabled:shipping,
+      delivery_fee:value,delivery_info:coverage},
+    p_expected_updated_at:settings.updated_at
+   });
+   if(!result?.updated_at)throw new Error("El servidor no confirmó la configuración de entregas.");
+   settings.updated_at=result.updated_at;
+   settings.delivery_fee=result.delivery_fee;
+   settings.delivery_info=result.delivery_info;
+   settings.fulfillment_config=result.fulfillment_config;
+   if(dash?.settings)Object.assign(dash.settings,{
+    updated_at:result.updated_at,delivery_fee:result.delivery_fee,
+    delivery_info:result.delivery_info,fulfillment_config:result.fulfillment_config
+   });
+   toast("Opciones de entrega guardadas correctamente.");
+  }catch(error){
+   fail(error);
+   if(/DELIVERY_SETTINGS_CHANGED_RELOAD/.test(String(error?.message||""))) {
+     try{await deliveryPanel(panel,siteId,dash);}catch(e){fail(e)}
+   }
+  }finally{setBusy(button,false)}
+ };
 }
 async function ordersPanel(panel,siteId){
  const {data,error}=await sb.from("orders").select("id,order_number,customer_name,created_at,total,delivery_method,payment_method,payment_status,status").eq("site_id",siteId).order("created_at",{ascending:false}).limit(100);if(error)throw error;
@@ -548,7 +602,7 @@ async function storefront(slug){
  const render=()=>{app.innerHTML=`<div class="store"><header class="store-head"><div class="store-cover" style="background-image:url('${esc(st.cover_url||"")}')"></div><div class="store-info">${st.logo_url?`<img class="store-logo" src="${esc(st.logo_url)}" alt="Logo de ${esc(site.name)}">`:""}<div><h1>${esc(site.name)}</h1><p>${esc(st.schedule||"")} · ${esc(st.address||"")}</p></div></div></header>${returnNotice?`<section class="card checkout-return" role="status" aria-live="polite"><strong>Estado del pago</strong><p>${esc(returnNotice)}</p></section>`:""}<main class="catalog"><div class="category-tabs"><button class="chip active" data-cat="">Todo</button>${cats.map(c=>`<button class="chip" data-cat="${esc(c.name)}">${esc(c.name)}</button>`).join("")}</div><div class="products">${products.map(p=>`<article class="product" data-category="${esc(p.category)}">${p.image_url?`<img loading="lazy" src="${esc(p.image_url)}" alt="${esc(p.name)}">`:'<div style="aspect-ratio:4/3;background:#eef1f5"></div>'}<div class="product-body"><h3>${esc(p.name)}</h3><p>${esc(p.description||"")}</p>${variants.some(v=>v.product_id===p.id)?`<select class="variant-select" aria-label="Variante de ${esc(p.name)}"><option value="">Elegí una variante</option>${variants.filter(v=>v.product_id===p.id).map(v=>`<option value="${v.id}">${esc(v.name)}${Number(v.price_delta)?` (+${money(v.price_delta,site.currency_code)})`:""}</option>`).join("")}</select>`:""}<div class="product-foot"><span class="money">${money(p.price,site.currency_code)}</span><button class="mini add" data-id="${p.id}">Agregar</button></div></div></article>`).join("")||'<div class="empty">No hay productos disponibles.</div>'}</div></main>${cart.length?`<button id="cart-bar" class="cart-bar"><span>Ver pedido (${cart.reduce((n,x)=>n+x.quantity,0)})</span><span>${money(total(),site.currency_code)}</span></button>`:""}</div>`;bind()};
  const bind=()=>{document.querySelectorAll(".add").forEach(b=>b.onclick=()=>{const p=products.find(x=>x.id===b.dataset.id),productVariants=variants.filter(v=>v.product_id===p.id),select=b.closest(".product").querySelector(".variant-select"),variantId=select?.value||null;if(productVariants.length&&!variantId)return toast("Elegí una variante.",true);const variant=productVariants.find(v=>v.id===variantId)||null,key=p.id+":"+(variantId||""),row=cart.find(x=>x.key===key);row?row.quantity++:cart.push({...p,key,variant_id:variantId,variant_name:variant?.name||"",unit_price:Number(p.price)+Number(variant?.price_delta||0),quantity:1});lastCheckoutPayload="";render()});document.querySelectorAll(".chip").forEach(b=>b.onclick=()=>{document.querySelectorAll(".chip").forEach(x=>x.classList.toggle("active",x===b));document.querySelectorAll(".product").forEach(x=>x.hidden=!!b.dataset.cat&&x.dataset.category!==b.dataset.cat)});const cb=document.getElementById("cart-bar");if(cb)cb.onclick=cartDrawer};
  const total=()=>cart.reduce((n,x)=>n+Number(x.unit_price??x.price)*x.quantity,0);
- const cartDrawer=()=>{const d=document.createElement("div");d.className="drawer";d.innerHTML=`<section class="drawer-panel"><div class="drawer-inner"><div class="section-head"><h2>Tu pedido</h2><button class="mini close">Cerrar</button></div><div class="list">${cart.map(x=>`<div class="row"><div><strong>${esc(x.name)}${x.variant_name?" · "+esc(x.variant_name):""}</strong><div class="row-sub">${money(x.unit_price??x.price)} × ${x.quantity}</div></div><div class="qty"><button class="mini q" data-key="${esc(x.key)}" data-d="-1">−</button><strong>${x.quantity}</strong><button class="mini q" data-key="${esc(x.key)}" data-d="1">+</button></div></div>`).join("")}</div><h2>Total: ${money(total(),site.currency_code)}</h2><form id="checkout">${field("customer_name","Nombre","text","","required")}${field("customer_phone","Teléfono","tel","","required")}<div class="field"><label>Entrega</label><select id="delivery_method">${st.fulfillment_config?.pickup_enabled!==false?'<option value="pickup">Retiro</option>':""}${st.fulfillment_config?.shipping_enabled?'<option value="delivery">Delivery</option>':""}</select></div>${field("delivery_address","Dirección (si elegís delivery)")}<div class="field"><label>Forma de pago</label><select id="payment_method">${st.payment_methods?.cash!==false?'<option value="cash">Efectivo</option>':""}${st.payment_methods?.transfer?'<option value="transfer">Transferencia</option>':""}${st.payment_methods?.mercadopago?'<option value="mercadopago">Mercado Pago</option>':""}</select></div><button class="btn brand" type="submit">Confirmar pedido</button></form></div></section>`;document.body.appendChild(d);d.querySelector(".close").onclick=()=>d.remove();d.querySelectorAll(".q").forEach(b=>b.onclick=()=>{const x=cart.find(i=>i.key===b.dataset.key);if(!x)return;x.quantity+=Number(b.dataset.d);cart=cart.filter(i=>i.quantity>0);lastCheckoutPayload="";d.remove();render();if(cart.length)cartDrawer()});d.querySelector("#checkout").onsubmit=async ev=>{ev.preventDefault();if(checkoutSubmitting)return;checkoutSubmitting=true;try{setBusy(ev.submitter,true);const session=await getSession();const body={site_id:site.id,customer_name:document.getElementById("customer_name").value,customer_phone:document.getElementById("customer_phone").value,delivery_method:document.getElementById("delivery_method").value,delivery_address:document.getElementById("delivery_address").value,payment_method:document.getElementById("payment_method").value,items:cart.map(x=>({product_id:x.id,quantity:x.quantity,variant_id:x.variant_id||null}))};
+ const cartDrawer=()=>{const d=document.createElement("div");d.className="drawer";d.innerHTML=`<section class="drawer-panel"><div class="drawer-inner"><div class="section-head"><h2>Tu pedido</h2><button class="mini close">Cerrar</button></div><div class="list">${cart.map(x=>`<div class="row"><div><strong>${esc(x.name)}${x.variant_name?" · "+esc(x.variant_name):""}</strong><div class="row-sub">${money(x.unit_price??x.price)} × ${x.quantity}</div></div><div class="qty"><button class="mini q" data-key="${esc(x.key)}" data-d="-1">−</button><strong>${x.quantity}</strong><button class="mini q" data-key="${esc(x.key)}" data-d="1">+</button></div></div>`).join("")}</div><div class="mc-checkout-totals"><div>Productos: <strong>${money(total(),site.currency_code)}</strong></div><div id="mc-shipping-charge">Envío: se calcula al elegir entrega</div><h2 id="mc-grand-total">Total estimado: ${money(total(),site.currency_code)}</h2><p class="hint">El importe definitivo lo confirma el servidor al registrar el pedido.</p></div><form id="checkout">${field("customer_name","Nombre","text","","required")}${field("customer_phone","Teléfono","tel","","required")}<div class="field"><label>Entrega</label><select id="delivery_method">${st.fulfillment_config?.pickup_enabled!==false?'<option value="pickup">Retiro</option>':""}${st.fulfillment_config?.shipping_enabled?'<option value="delivery">Delivery</option>':""}</select></div>${field("delivery_address","Dirección (si elegís delivery)")}${st.delivery_info?`<p class="hint">Cobertura informada por el comercio: ${esc(st.delivery_info)}</p>`:""}<div class="field"><label>Forma de pago</label><select id="payment_method">${st.payment_methods?.cash!==false?'<option value="cash">Efectivo</option>':""}${st.payment_methods?.transfer?'<option value="transfer">Transferencia</option>':""}${st.payment_methods?.mercadopago?'<option value="mercadopago">Mercado Pago</option>':""}</select></div><button class="btn brand" type="submit">Confirmar pedido</button></form></div></section>`;document.body.appendChild(d);d.querySelector(".close").onclick=()=>d.remove();d.querySelectorAll(".q").forEach(b=>b.onclick=()=>{const x=cart.find(i=>i.key===b.dataset.key);if(!x)return;x.quantity+=Number(b.dataset.d);cart=cart.filter(i=>i.quantity>0);lastCheckoutPayload="";d.remove();render();if(cart.length)cartDrawer()});const updateDeliveryQuote=()=>{const shipping=d.querySelector("#delivery_method")?.value==="delivery";const fee=Number(st.delivery_fee||0);const amount=shipping&&Number.isFinite(fee)&&fee>0?fee:0;const label=d.querySelector("#mc-shipping-charge"),sum=d.querySelector("#mc-grand-total");if(label)label.textContent="Envío: "+(shipping?money(amount,site.currency_code):"sin cargo por retiro");if(sum)sum.textContent="Total estimado: "+money(total()+amount,site.currency_code);};d.querySelector("#delivery_method").addEventListener("change",updateDeliveryQuote);updateDeliveryQuote();d.querySelector("#checkout").onsubmit=async ev=>{ev.preventDefault();if(checkoutSubmitting)return;checkoutSubmitting=true;try{setBusy(ev.submitter,true);const session=await getSession();const body={site_id:site.id,customer_name:document.getElementById("customer_name").value,customer_phone:document.getElementById("customer_phone").value,delivery_method:document.getElementById("delivery_method").value,delivery_address:document.getElementById("delivery_address").value,payment_method:document.getElementById("payment_method").value,items:cart.map(x=>({product_id:x.id,quantity:x.quantity,variant_id:x.variant_id||null}))};
 const name=body.customer_name.trim(),phone=body.customer_phone.replace(/\D/g,""),delivery=body.delivery_method,method=body.payment_method;
 if(!cart.length)throw new Error("Agregá al menos un producto.");
 if(cart.length>40||cart.some(x=>!Number.isInteger(x.quantity)||x.quantity<1||x.quantity>100))throw new Error("Revisá las cantidades del carrito (máximo 40 productos diferentes).");
@@ -556,6 +610,22 @@ if(name.length<2||name.length>120)throw new Error("Ingresá un nombre válido.")
 if(phone.length<8||phone.length>15)throw new Error("Ingresá un teléfono válido, con código de área.");
 if(!["pickup","delivery"].includes(delivery)||!["cash","transfer","mercadopago"].includes(method))throw new Error("Elegí entrega y forma de pago.");
 if(delivery==="delivery"&&body.delivery_address.trim().length<5)throw new Error("Ingresá la dirección de entrega.");
+// Delivery details must be part of the attempt fingerprint: changing the map pin,
+// apartment or instructions after a failed checkout must create a NEW attempt ID.
+if(delivery==="delivery"){
+ const loc=window.__mcDeliveryLocation;
+ const lat=loc?.lat==null?NaN:Number(loc.lat),lng=loc?.lng==null?NaN:Number(loc.lng);
+ const valid=Number.isFinite(lat)&&Number.isFinite(lng)&&lat>=-90&&lat<=90&&lng>=-180&&lng<=180;
+ if(valid){
+   body.delivery_latitude=lat;body.delivery_longitude=lng;
+   body.delivery_place_id=String(loc.place_id||"");
+   body.delivery_address_formatted=String(loc.formatted||body.delivery_address);
+   body.delivery_address_source=loc.source==="google"?"google":"manual_map";
+   if(loc.formatted)body.delivery_address=String(loc.formatted);
+ }else body.delivery_address_source="manual";
+ body.delivery_unit=String(document.getElementById("mc_delivery_unit")?.value||"");
+ body.delivery_instructions=String(document.getElementById("mc_delivery_instructions")?.value||"");
+}
 const fingerprint=JSON.stringify(body);
 if(!checkoutAttemptId||fingerprint!==lastCheckoutPayload){checkoutAttemptId=crypto.randomUUID();lastCheckoutPayload=fingerprint;}
 body.checkout_attempt_id=checkoutAttemptId;
