@@ -380,6 +380,7 @@ async function dashboard(site){
  <section class="stats"><div class="stat"><div class="count">${c.new_orders||0}</div><small>Pedidos nuevos</small></div><div class="stat"><div class="count">${c.products||0}</div><small>Productos</small></div><div class="stat"><div class="count">${c.categories||0}</div><small>Categorías</small></div><div class="stat"><div class="count">${c.orders||0}</div><small>Pedidos totales</small></div></section>
  <section class="section menu-grid">
   ${menu("orders","📦","Pedidos","Ver y actualizar")}
+  ${menu("notifications","🔔","Avisos","Pedidos y pagos")}
   ${menu("products","🛍️","Productos","Precios y stock")}
   ${menu("categories","▦","Categorías","Ordená tu catálogo")}
   ${menu("store","🏪","Mi tienda","Datos e imágenes")}
@@ -397,6 +398,7 @@ async function openPanel(kind,siteId,dash){
  const panel=document.getElementById("panel");panel.innerHTML='<div class="loading"><div class="spinner"></div></div>';
  try{
   if(kind==="orders")return ordersPanel(panel,siteId);
+  if(kind==="notifications")return notificationsPanel(panel,siteId,dash);
   if(kind==="products")return productsPanel(panel,siteId);
   if(kind==="categories")return categoriesPanel(panel,siteId);
   if(kind==="share")return sharePanel(panel,dash.site.slug);
@@ -459,6 +461,62 @@ async function deliveryPanel(panel,siteId,dash){
    }
   }finally{setBusy(button,false)}
  };
+}
+
+async function notificationsPanel(panel,siteId,dash){
+ let busy=false,items=[];
+ const formatDate=value=>{
+  const date=new Date(value);
+  return Number.isNaN(date.getTime())?"Sin fecha":date.toLocaleString("es-AR");
+ };
+ const load=async()=>{
+  const response=await rpc("simple_my_notifications",{p_site_id:siteId,p_limit:60});
+  if(!Array.isArray(response))throw new Error("Respuesta de notificaciones inválida.");
+  items=response;render();
+ };
+ const render=()=>{
+  const unread=items.filter(n=>!n.read_at).length;
+  panel.innerHTML=`<div class="section-head"><h2>Avisos de tu tienda</h2><div class="simple-notifications-tools"><span class="status" id="notification-unread-count">${unread} sin leer</span> <button type="button" class="mini" id="notification-refresh">Actualizar</button></div></div>
+  <p class="muted">Historial interno de pedidos, pagos y suscripciones. No equivale a un correo o push enviado. Confirmá los pagos en la sección Pedidos.</p>
+  <div class="list simple-notifications-list">${items.map(n=>`<article class="card simple-notification ${n.read_at?"is-read":"is-unread"}">
+    <div class="row-title">${esc(n.title||"Aviso")} <span class="status">${esc(n.kind==="payment"?"Pago":n.kind==="subscription"?"Suscripción":"Pedido")}</span></div>
+    <div class="row-sub">${esc(formatDate(n.created_at))}</div>
+    <p>${esc(n.message||"")}</p>
+    <div class="simple-notification-actions">
+      ${n.read_at?'<span class="muted">Leído</span>':`<button type="button" class="mini notification-mark" data-id="${esc(n.id)}">Marcar como leído</button>`}
+      ${n.order_id?'<button type="button" class="mini notification-orders">Ver pedidos</button>':""}
+    </div>
+  </article>`).join("")||'<div class="card empty">No hay avisos para esta tienda.</div>'}</div>`;
+  panel.querySelector("#notification-refresh").onclick=refresh;
+  panel.querySelectorAll(".notification-orders").forEach(button=>button.onclick=()=>ordersPanel(panel,siteId).catch(fail));
+  panel.querySelectorAll(".notification-mark").forEach(button=>{
+   button.onclick=async()=>{
+    if(busy)return;busy=true;setBusy(button,true);
+    try{
+     const saved=await rpc("simple_mark_notification_read",{p_site_id:siteId,p_notification_id:button.dataset.id});
+     if(!saved?.read_at||saved.id!==button.dataset.id)throw new Error("El servidor no confirmó la lectura.");
+     const item=items.find(n=>n.id===saved.id);
+     if(item)item.read_at=saved.read_at;
+     render();
+    }catch(error){fail(error);}
+    finally{busy=false;setBusy(button,false)}
+   };
+  });
+ };
+ const refresh=async()=>{
+  if(busy)return;busy=true;
+  const button=panel.querySelector("#notification-refresh");
+  setBusy(button,true);
+  try{await load();}
+  catch(error){fail(error);}
+  finally{busy=false;setBusy(button,false)}
+ };
+ try{await load();}
+ catch(error){
+  panel.innerHTML='<div class="card"><h2>No se pudieron cargar los avisos</h2><p>La tienda y sus pedidos siguen funcionando. Revisá la conexión.</p><button class="btn" id="notification-retry">Reintentar</button></div>';
+  panel.querySelector("#notification-retry").onclick=()=>notificationsPanel(panel,siteId,dash).catch(fail);
+  console.warn("simple_notifications_load",error?.message||"failed");
+ }
 }
 async function ordersPanel(panel,siteId){
  const {data,error}=await sb.from("orders").select("id,order_number,customer_name,created_at,total,delivery_method,payment_method,payment_status,status").eq("site_id",siteId).order("created_at",{ascending:false}).limit(100);if(error)throw error;
