@@ -44,6 +44,9 @@ BEGIN
     RAISE EXCEPTION 'SECURITY_TEST_AUDIT_FORGERY_ENABLED';
   END IF;
   PERFORM public.simple_dashboard(v_owned);
+  -- Authorized merchant RPC must still write its trusted audit event inside
+  -- SECURITY DEFINER; transaction rollback removes the fixture update/event.
+  PERFORM public.simple_save_personalization(v_owned,'{}'::jsonb);
   BEGIN
     PERFORM public.simple_preview_storefront(v_slug);
     RAISE EXCEPTION 'SECURITY_TEST_FOREIGN_PREVIEW_EXPOSED';
