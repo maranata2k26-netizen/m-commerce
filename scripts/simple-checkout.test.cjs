@@ -17,7 +17,7 @@ const vidA='123e4567-e89b-42d3-a456-426614174001';
 const vidB='123e4567-e89b-42d3-a456-426614174002';
 function harness(options={}){
  const data={site:{id:'123e4567-e89b-42d3-a456-426614174003',slug:'sample-store',name:'Commerce QA',currency_code:'ARS'},
-  settings:{payment_methods:{cash:true,transfer:true,mercadopago:false},fulfillment_config:{pickup_enabled:true,shipping_enabled:true}},
+  settings:{payment_methods:{cash:true,transfer:true,mercadopago:false},delivery_fee:options.deliveryFee??0,fulfillment_config:{pickup_enabled:true,shipping_enabled:true}},
   products:[{id:pid,name:'Remera',price:1000,active:true}],
   variants:[{id:vidA,product_id:pid,name:'Negro',price_delta:0,available:true},
            {id:vidB,product_id:pid,name:'Blanco',price_delta:100,available:true}],
@@ -199,4 +199,18 @@ test('manual delivery has no invented coordinates and remains within the server 
  assert.equal(p.delivery_address_source,'manual');
  assert.equal(Object.hasOwn(p,'delivery_latitude'),false);
  assert.equal(Object.hasOwn(p,'delivery_longitude'),false);
+});
+
+
+test('checkout quote shows the merchant delivery fee, and pickup remains fee-free',async()=>{
+ const h=harness({deliveryFee:120.5});await h.init();h.add(vidA);h.openCart();
+ const delivery=h.context.document.getElementById('delivery_method');
+ const total=h.context.document.getElementById('mc-grand-total');
+ const charge=h.context.document.getElementById('mc-shipping-charge');
+ assert.equal(total.textContent,'Total estimado: $1000');
+ delivery.value='delivery';delivery.onchange();
+ assert.equal(total.textContent,'Total estimado: $1120.5');
+ assert.equal(charge.textContent,'Envío: $120.5');
+ delivery.value='pickup';delivery.onchange();
+ assert.equal(total.textContent,'Total estimado: $1000');
 });
