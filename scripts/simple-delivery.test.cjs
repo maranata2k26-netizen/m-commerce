@@ -29,7 +29,7 @@ test('stale geocoding answers cannot overwrite newer input and manual checkout r
   assert.match(loc,/if\(seq!==requestSeq\|\|!input\.isConnected\)return/);
   assert.match(loc,/Podés ingresar tu dirección manualmente/);
   assert.match(loc,/manual\.length<5/);
-  assert.match(loc,/body\.delivery_address_source=loc\?\.source\|\|"manual"/);
+  assert.match(loc,/body\.delivery_address_source=loc\?\(loc\.source==="google"\?"google":"manual_map"\):"manual"/);
   assert.match(loc,/\.eq\("site_id",activeSiteId\)\.in\("id",ids\)/);
 });
 test('backend binds flat delivery fee and coverage to the merchant without losing other config',()=>{
@@ -114,4 +114,13 @@ test('checkout shows delivery fee before payment without altering order idempote
  assert.match(main,/checkout_attempt_id=checkoutAttemptId/);
  assert.match(main,/payment_url/);
  assert.match(main,/st\.delivery_info/);
+});
+
+test('checkout normalizes geolocation source to database-supported labels before both offline and paid orders',()=>{
+ const edge=fs.readFileSync(path.join(root,'supabase/functions/simple-checkout/index.ts'),'utf8');
+ assert.match(edge,/delivery_address_source:requestedDelivery==="delivery"\?/);
+ assert.match(edge,/body\.delivery_address_source==="google"\?"google"/);
+ assert.match(edge,/lat===null\?"manual"/);
+ assert.match(edge,/"manual_map"/);
+ assert.doesNotMatch(edge,/source\|\|\(lat!==null\?"geoapify"/);
 });
