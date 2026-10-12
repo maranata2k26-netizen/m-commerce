@@ -110,7 +110,7 @@ Deno.serve(async(req:Request)=>{
       const exactUpdate=await admin.from("orders").update({
         delivery_latitude:lat,delivery_longitude:lng,
         delivery_place_id:place||null,delivery_address_formatted:formatted||address||null,
-        delivery_address_source:source||(lat!==null?"geoapify":"manual"),
+        delivery_address_source:source,
         delivery_unit:unit||null,delivery_instructions:instructions||null
       }).eq("id",order.id).eq("site_id",siteId);
       if(exactUpdate.error)throw exactUpdate.error;
