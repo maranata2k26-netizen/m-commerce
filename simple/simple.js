@@ -432,7 +432,7 @@ async function deliveryPanel(panel,siteId,dash){
   const value=Number(feeString);
   const coverage=panel.querySelector("#simple-coverage").value.trim();
   if(!pickup&&!shipping)return toast("Habilitá retiro, delivery o ambas opciones.",true);
-  if(!feeString||!Number.isFinite(value)||value<0||value>10000000||Math.round(value*100)!==value*100)
+  if(!feeString||!Number.isFinite(value)||value<0||value>10000000||Math.abs(value-Math.round(value*100)/100)>1e-8)
      return toast("Ingresá un costo de envío válido, sin valores negativos.",true);
   if(coverage.length>500)return toast("La cobertura no puede superar 500 caracteres.",true);
   try{
