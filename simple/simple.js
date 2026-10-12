@@ -218,8 +218,132 @@ function authExpiredView(){
 function setBusy(el,on){if(!el)return;el.disabled=on;el.dataset.label??=el.textContent;el.textContent=on?"Procesando…":el.dataset.label}
 async function adminRoute(){
  const session=await getSession();if(!session)return authView("login");
- let stores,leads;try{[stores,leads]=await Promise.all([rpc("simple_master_stores"),rpc("simple_master_pro_leads")])}catch(e){app.innerHTML='<main class="loading"><h1>Acceso restringido</h1><p>Esta sección requiere una cuenta del Panel Maestro.</p></main>';return}
- const render=()=>{app.innerHTML=`<div class="app-shell"><header class="app-head"><div class="inner"><span class="brand">M COMMERCE <small>SIMPLE · MAESTRO</small></span><div><a class="mini" href="/app-maestro/panel">Panel Maestro</a> <button id="logout" class="mini">Salir</button></div></div></header><main class="app-main"><section class="welcome"><div><div class="eyebrow">M Commerce Simple</div><h1>Comercios autogestionados</h1></div><span class="status active">${stores.length} tiendas</span></section><section class="list">${stores.map(x=>`<article class="card row"><div class="row-main"><div class="row-title">${esc(x.name)} <span class="status">SIMPLE</span></div><div class="row-sub">${esc(x.owner_email||"Sin email")} · Alta ${new Date(x.created_at).toLocaleDateString("es-AR")} · Suscripción ${esc(x.subscription_status)} · Tienda ${esc(x.status)}</div><div class="row-sub">${x.products} productos · ${x.orders} pedidos · Última actividad ${new Date(x.last_activity_at).toLocaleString("es-AR")}</div></div><button class="btn admin-state" data-id="${x.id}" data-action="${x.is_suspended?"reactivate":"suspend"}">${x.is_suspended?"Reactivar":"Suspender"}</button></article>`).join("")||'<div class="card empty">Todavía no hay comercios Simple.</div>'}</section><section class="section"><div class="section-head"><h2>Solicitudes M Commerce PRO</h2><span class="status">${leads.length} solicitudes</span></div><div class="list">${leads.map(l=>`<article class="card"><div class="row-title">${esc(l.business_name)} · ${esc(l.name)}</div><div class="row-sub">${esc(l.email)} · ${esc(l.phone||"Sin teléfono")} · ${new Date(l.created_at).toLocaleString("es-AR")}</div><p>${esc(l.details||"Sin detalle")}</p></article>`).join("")||'<div class="card empty">No hay solicitudes PRO pendientes.</div>'}</div></section></main></div>`;document.getElementById("logout").onclick=logout;document.querySelectorAll(".admin-state").forEach(b=>b.onclick=async()=>{try{setBusy(b,true);await rpc("simple_admin_set_store_state",{p_site_id:b.dataset.id,p_action:b.dataset.action});[stores,leads]=await Promise.all([rpc("simple_master_stores"),rpc("simple_master_pro_leads")]);render();toast("Estado actualizado y auditado.")}catch(e){fail(e)}finally{setBusy(b,false)}})};render();
+ const masterDate=(value,withTime=false)=>{
+   if(!value)return "Sin fecha";
+   const date=new Date(value);
+   return Number.isNaN(date.getTime())?"Sin fecha":withTime?date.toLocaleString("es-AR"):date.toLocaleDateString("es-AR");
+ };
+ const masterPrice=(amount,currency)=>{
+   if(amount==null||!Number.isFinite(Number(amount)))return "Sin precio informado";
+   try{return new Intl.NumberFormat("es-AR",{style:"currency",currency:currency||"ARS",maximumFractionDigits:2}).format(Number(amount));}
+   catch{return String(amount)+" "+String(currency||"ARS");}
+ };
+ const masterPaymentAttention=x=>!["trial","active"].includes(String(x.subscription?.status||x.subscription_status||"").toLowerCase());
+ let stores=[],leads=[],leadsError="",query="",filter="all",busy=false;
+ try{
+   stores=await rpc("simple_master_stores");
+   if(!Array.isArray(stores))throw new Error("No se recibió una lista válida de comercios.");
+ }catch(error){
+   const denied=/ADMIN_REQUIRED|SITE_ACCESS_DENIED|ACCESS_DENIED|FORBIDDEN/.test(String(error?.message||error));
+   app.innerHTML=denied?
+      '<main class="loading"><h1>Acceso restringido</h1><p>Esta sección requiere una cuenta autorizada del Panel Maestro.</p><a class="mini" href="/simple/app">Volver</a></main>':
+      '<main class="loading"><h1>No se pudo cargar el Panel Maestro</h1><p>Revisá la conexión e intentá nuevamente. No se realizaron cambios.</p><button id="master-retry" class="btn">Reintentar</button></main>';
+   if(!denied)document.getElementById("master-retry").onclick=()=>adminRoute();
+   return;
+ }
+ const loadLeads=async()=>{
+   try{
+     const result=await rpc("simple_master_pro_leads");
+     if(!Array.isArray(result))throw new Error("Respuesta inválida");
+     leads=result;leadsError="";
+   }catch(error){
+     leadsError="No se pudieron cargar las solicitudes PRO. Los comercios siguen disponibles.";
+     console.warn("simple_master_pro_leads",error);
+   }
+ };
+ await loadLeads();
+ app.innerHTML=`<div class="app-shell"><header class="app-head"><div class="inner"><span class="brand">M COMMERCE <small>SIMPLE · MAESTRO</small></span><div><a class="mini" href="/app-maestro/panel">Panel Maestro general</a> <button id="logout" class="mini">Salir</button></div></div></header>
+ <main class="app-main"><section class="welcome"><div><div class="eyebrow">Administración autorizada</div><h1>Comercios y suscripciones</h1><p class="muted">Supervisión de tiendas Simple. Los cobros se administran desde el sistema de facturación, no desde este listado.</p></div><button id="master-refresh" class="btn secondary">Actualizar datos</button></section>
+ <section id="master-stats" class="admin-master-stats" aria-label="Resumen de comercios"></section>
+ <section class="section"><div class="section-head"><h2>Tiendas Simple</h2><span id="master-count" class="status"></span></div>
+ <div class="admin-master-controls"><label class="field"><span>Buscar comercio</span><input id="master-search" type="search" placeholder="Nombre, enlace o email" autocomplete="off"></label><label class="field"><span>Mostrar</span><select id="master-filter"><option value="all">Todas</option><option value="published">Publicadas</option><option value="draft">Borradores</option><option value="suspended">Suspendidas</option><option value="payment">Suscripción pendiente</option></select></label></div>
+ <div id="master-stores" class="list" aria-live="polite"></div></section>
+ <section class="section"><div class="section-head"><h2>Solicitudes M Commerce PRO</h2><span id="master-leads-count" class="status"></span></div><p id="master-leads-error" class="hint" role="status"></p><div id="master-leads" class="list"></div></section></main></div>`;
+ document.getElementById("logout").onclick=logout;
+ const renderStats=()=>{
+   const total=stores.length,published=stores.filter(x=>x.status==="published"&&!x.is_suspended).length;
+   const suspended=stores.filter(x=>x.is_suspended).length,payment=stores.filter(masterPaymentAttention).length;
+   const stats=[["Tiendas Simple",total],["Publicadas",published],["Suspendidas",suspended],["Suscripciones a revisar",payment]];
+   document.getElementById("master-stats").innerHTML=stats.map(([label,value])=>
+      `<article class="card admin-master-stat"><div class="muted">${esc(label)}</div><strong>${value}</strong></article>`).join("");
+ };
+ const renderStores=()=>{
+   const filtered=stores.filter(x=>{
+      const matchesQuery=[x.name,x.slug,x.owner_email].some(v=>String(v||"").toLocaleLowerCase("es-AR").includes(query));
+      const matchesFilter=filter==="all"||(filter==="published"&&x.status==="published"&&!x.is_suspended)||
+        (filter==="draft"&&x.status==="draft")||(filter==="suspended"&&Boolean(x.is_suspended))||
+        (filter==="payment"&&masterPaymentAttention(x));
+      return matchesQuery&&matchesFilter;
+   });
+   document.getElementById("master-count").textContent=filtered.length+" de "+stores.length+" tiendas";
+   document.getElementById("master-stores").innerHTML=filtered.map(x=>{
+      const sub=x.subscription||{},isSuspended=Boolean(x.is_suspended);
+      const subscriptionState=sub.status||x.subscription_status||"Sin datos";
+      const publicStatus=isSuspended?"Suspendida":x.status||"Sin datos";
+      const nextDue=sub.next_due_at?" · Próximo vencimiento: "+masterDate(sub.next_due_at):"";
+      const grace=sub.grace_until?" · Gracia hasta: "+masterDate(sub.grace_until):"";
+      const productCount=Number.isFinite(Number(x.products))?Number(x.products):0;
+      const orderCount=Number.isFinite(Number(x.orders))?Number(x.orders):0;
+      return `<article class="card row admin-master-store"><div class="row-main">
+       <div class="row-title">${esc(x.name||"Sin nombre")} <span class="status">${esc(publicStatus)}</span></div>
+       <div class="row-sub">${esc(x.owner_email||"Sin email")} · /tienda/${esc(x.slug||"")} · Alta ${esc(masterDate(x.created_at))}</div>
+       <div class="row-sub">${productCount} productos · ${orderCount} pedidos · Última actividad ${esc(masterDate(x.last_activity_at,true))}</div>
+       <div class="row-sub"><strong>Suscripción: ${esc(subscriptionState)}</strong> · ${esc(sub.plan_name||"Sin plan")} · ${esc(masterPrice(sub.monthly_amount,sub.currency_code))} / mes</div>
+       <div class="row-sub">${esc(sub.provider||"Sin proveedor")} · ${esc(sub.provider_status||"Sin estado del proveedor")}${esc(nextDue)}${esc(grace)}</div>
+       </div><button class="btn admin-state" type="button" data-id="${esc(x.id)}" ${busy?"disabled":""}>${isSuspended?"Reactivar":"Suspender"}</button></article>`;
+   }).join("")||'<div class="card empty">No hay comercios que coincidan con el filtro.</div>';
+ };
+ const renderLeads=()=>{
+   document.getElementById("master-leads-count").textContent=leads.length+" solicitudes";
+   document.getElementById("master-leads-error").textContent=leadsError;
+   document.getElementById("master-leads").innerHTML=leads.map(l=>
+     `<article class="card"><div class="row-title">${esc(l.business_name||"Sin comercio")} · ${esc(l.name||"Sin nombre")}</div>
+       <div class="row-sub">${esc(l.email||"Sin email")} · ${esc(l.phone||"Sin teléfono")} · ${esc(masterDate(l.created_at,true))}</div>
+       <p>${esc(l.details||"Sin detalle")}</p></article>`
+   ).join("")||'<div class="card empty">No hay solicitudes PRO registradas.</div>';
+ };
+ const renderAll=()=>{renderStats();renderStores();renderLeads();};
+ const refresh=async()=>{
+   if(busy)return;
+   const button=document.getElementById("master-refresh");
+   busy=true;setBusy(button,true);
+   try{
+     const fresh=await rpc("simple_master_stores");
+     if(!Array.isArray(fresh))throw new Error("No se recibió una lista válida de comercios.");
+     stores=fresh;
+     await loadLeads();
+     renderAll();
+     toast("Datos del Panel Maestro actualizados.");
+   }catch(error){fail(error);}
+   finally{busy=false;setBusy(button,false);renderStores();}
+ };
+ document.getElementById("master-refresh").onclick=refresh;
+ document.getElementById("master-search").oninput=e=>{query=String(e.currentTarget.value||"").trim().toLocaleLowerCase("es-AR");renderStores();};
+ document.getElementById("master-filter").onchange=e=>{filter=e.currentTarget.value;renderStores();};
+ document.getElementById("master-stores").onclick=async event=>{
+   const button=event.target.closest(".admin-state");
+   if(!button||busy)return;
+   const store=stores.find(x=>x.id===button.dataset.id);if(!store)return;
+   const expected=Boolean(store.is_suspended),action=expected?"reactivate":"suspend";
+   const verb=expected?"reactivar":"suspender";
+   if(!window.confirm(`¿Confirmás ${verb} la tienda «${store.name}»? El cambio afecta su disponibilidad pública, pero no modifica sus pagos ni su suscripción.`))return;
+   busy=true;setBusy(button,true);renderStats();
+   try{
+     const result=await rpc("simple_admin_set_store_state_safe",{
+       p_site_id:store.id,p_action:action,p_expected_suspended:expected
+     });
+     if(!result||result.id!==store.id||Boolean(result.is_suspended)===expected)
+       throw new Error("El servidor no confirmó el cambio de estado.");
+     store.is_suspended=Boolean(result.is_suspended);
+     toast("Estado actualizado y auditado.");
+   }catch(error){
+     fail(error);
+     if(String(error?.message||"").includes("STORE_STATE_CHANGED_RELOAD")){
+       try{const fresh=await rpc("simple_master_stores");if(Array.isArray(fresh))stores=fresh;}catch(e){console.warn("simple_master_refresh",e);}
+     }
+   }finally{busy=false;renderStats();renderStores();}
+ };
+ renderAll();
 }
 function resetPasswordView(){app.innerHTML=`<div class="shell">${nav()}<main class="auth-wrap card"><div class="eyebrow">Seguridad</div><h1>Elegí una nueva contraseña</h1><form id="reset-form">${field("new_password","Nueva contraseña","password","","required minlength=\"8\" autocomplete=\"new-password\"")}${field("confirm_password","Repetí la contraseña","password","","required minlength=\"8\" autocomplete=\"new-password\"")}<button class="btn brand" type="submit">Actualizar contraseña</button></form><p><a href="/simple/app?mode=recover">Solicitar otro enlace</a></p></main></div>`;document.getElementById("reset-form").onsubmit=async ev=>{ev.preventDefault();const password=document.getElementById("new_password").value;if(password!==document.getElementById("confirm_password").value)return toast("Las contraseñas no coinciden.",true);try{setBusy(ev.submitter,true);const {error}=await sb.auth.updateUser({password});if(error)throw error;location.replace("/simple/app?password_updated=1")}catch(e){fail(e)}finally{setBusy(ev.submitter,false)}}}
 async function appRoute(){
