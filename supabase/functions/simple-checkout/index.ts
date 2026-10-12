@@ -77,7 +77,7 @@ Deno.serve(async(req:Request)=>{
     const fulfillment=settings.fulfillment_config||{};
     if((requestedDelivery==="pickup"&&fulfillment.pickup_enabled===false)||(requestedDelivery==="delivery"&&fulfillment.shipping_enabled!==true))return json(req,{error:"DELIVERY_METHOD_DISABLED",message:"El comercio no ofrece esa forma de entrega."},409);
     if(method==="mercadopago"){
-      const forwarded=await fetch(SUPABASE_URL+"/functions/v1/checkout-create",{method:"POST",headers:{"content-type":"application/json","apikey":SERVICE,"authorization":"Bearer "+SERVICE,...(origin?{"origin":origin}:{})},body:JSON.stringify({...body,order_source:"simple"})});
+      const forwarded=await fetch(SUPABASE_URL+"/functions/v1/checkout-create",{method:"POST",headers:{"content-type":"application/json","apikey":SERVICE,"authorization":"Bearer "+SERVICE,...(origin?{"origin":origin}:{})},body:JSON.stringify({...body,delivery_address_source:requestedDelivery==="delivery"?(body.delivery_address_source==="google"?"google":body.delivery_latitude!=null&&body.delivery_longitude!=null?"manual_map":"manual"):null,order_source:"simple"})});
       return new Response(await forwarded.text(),{status:forwarded.status,headers:{...headers(req),"content-type":"application/json; charset=utf-8"}});
     }
     const customerName=cut(body?.customer_name,120),phone=cut(body?.customer_phone,40),address=cut(body?.delivery_address,500),delivery=requestedDelivery;
@@ -86,7 +86,7 @@ Deno.serve(async(req:Request)=>{
     if((lat===null)!==(lng===null))return json(req,{error:"INVALID_DELIVERY_COORDINATES",message:"La ubicación exacta está incompleta."},422);
     const place=delivery==="delivery"?cut(body?.delivery_place_id,240):"";
     const formatted=delivery==="delivery"?cut(body?.delivery_address_formatted,500):"";
-    const source=delivery==="delivery"?cut(body?.delivery_address_source,30):"";
+    const source=delivery==="delivery"?(lat===null?"manual":body?.delivery_address_source==="google"?"google":"manual_map"):"";
     const unit=delivery==="delivery"?cut(body?.delivery_unit,120):"";
     const instructions=delivery==="delivery"?cut(body?.delivery_instructions,500):"";
     const phoneDigits=phone.replace(/\D/g,"");
