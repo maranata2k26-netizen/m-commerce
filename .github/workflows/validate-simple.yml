@@ -12,6 +12,7 @@ on:
       - "scripts/simple-merchant-panel.test.cjs"
       - "scripts/simple-security.test.cjs"
       - "scripts/simple-master.test.cjs"
+      - "scripts/simple-delivery.test.cjs"
       - "scripts/staging-live-smoke.test.cjs"
       - "supabase/**"
       - "vercel.json"
@@ -27,6 +28,8 @@ jobs:
         run: for script in simple/*.js; do node --check "$script" || exit 1; done
       - name: Validate merchant panel, inventory and order status handling
         run: node --test scripts/simple-merchant-panel.test.cjs
+      - name: Validate delivery costs, maps fallback, and tenant delivery permissions
+        run: node --test scripts/simple-delivery.test.cjs
       - name: Validate Master Panel and moderation contracts
         run: node --test scripts/simple-master.test.cjs
       - name: Validate tenant isolation and internal audit authorization
