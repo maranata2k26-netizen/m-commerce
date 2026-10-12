@@ -11,6 +11,7 @@ on:
       - "scripts/simple-checkout.test.cjs"
       - "scripts/simple-merchant-panel.test.cjs"
       - "scripts/simple-security.test.cjs"
+      - "scripts/simple-master.test.cjs"
       - "scripts/staging-live-smoke.test.cjs"
       - "supabase/**"
       - "vercel.json"
@@ -26,6 +27,8 @@ jobs:
         run: for script in simple/*.js; do node --check "$script" || exit 1; done
       - name: Validate merchant panel, inventory and order status handling
         run: node --test scripts/simple-merchant-panel.test.cjs
+      - name: Validate Master Panel and moderation contracts
+        run: node --test scripts/simple-master.test.cjs
       - name: Validate tenant isolation and internal audit authorization
         run: node --test scripts/simple-security.test.cjs
       - name: Validate Simple checkout cart, order retry and inventory boundaries
