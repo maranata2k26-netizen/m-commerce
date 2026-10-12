@@ -124,3 +124,12 @@ test('checkout normalizes geolocation source to database-supported labels before
  assert.match(edge,/"manual_map"/);
  assert.doesNotMatch(edge,/source\|\|\(lat!==null\?"geoapify"/);
 });
+
+test('valid 0.29 fee is accepted rather than rejected by floating point imprecision',async()=>{
+ const h=harness();await h.init();
+ h.elements.get('#simple-shipping-fee').value='0.29';
+ await h.form.onsubmit(submit());
+ const rpc=h.calls.find(c=>c.name==='simple_update_delivery_settings');
+ assert.equal(rpc.args.p_config.delivery_fee,0.29);
+ assert.equal(h.errors.length,0);
+});
