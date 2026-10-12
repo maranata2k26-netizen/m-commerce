@@ -251,7 +251,7 @@
           const body=JSON.parse(init.body);
           if(body.delivery_method==="delivery"){
             const loc=normalize(window.__mcDeliveryLocation);
-            body.delivery_address_source=loc?.source||"manual";
+            body.delivery_address_source=loc?(loc.source==="google"?"google":"manual_map"):"manual";
             if(loc){
               body.delivery_latitude=loc.lat;body.delivery_longitude=loc.lng;body.delivery_place_id=loc.place_id||null;body.delivery_address_formatted=loc.formatted||body.delivery_address;body.delivery_address_source=loc.source||"map";
               if(loc.formatted)body.delivery_address=loc.formatted;
