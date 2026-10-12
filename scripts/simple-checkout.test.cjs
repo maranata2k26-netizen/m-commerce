@@ -31,14 +31,14 @@ function harness(options={}){
  const inputs={customer_name:'Marina Test',customer_phone:'1162760623',delivery_method:'pickup',delivery_address:'',payment_method:'cash'};
  function getElementById(id){
   if(id==='cart-bar')return app.innerHTML.includes('id="cart-bar"')?cartBar:null;
-  if(!elements.has(id))elements.set(id,{id,value:inputs[id]??'',dataset:{},disabled:false,onclick:null});
+  if(!elements.has(id))elements.set(id,{id,value:inputs[id]??'',dataset:{},disabled:false,onclick:null,addEventListener(type,handler){this['on'+type]=handler;}});
   return elements.get(id);
  }
  function newDrawer(){
   const close={onclick:null};
   const d={className:'',innerHTML:'',removed:false,
    remove(){this.removed=true;},
-   querySelector(q){if(q==='.close')return close;if(q==='#checkout')return forms.checkout;return null;},
+   querySelector(q){if(q==='.close')return close;if(q==='#checkout')return forms.checkout;if(q.startsWith('#'))return getElementById(q.slice(1));return null;},
    querySelectorAll(q){
     if(q!=='.q')return [];
     d.controls=[...d.innerHTML.matchAll(/<button class="mini q" data-key="([^"]+)" data-d="([^"]+)"/g)]
