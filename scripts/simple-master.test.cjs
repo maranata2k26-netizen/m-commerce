@@ -30,6 +30,7 @@ function harness(options={}){
   app,document:{getElementById:getNode},
   getSession:async()=>options.session===undefined?{user:{id:'some-id'}}:options.session,
   authView:()=>{app.innerHTML='login';},
+  logout:async()=>{},
   rpc:async(name,args)=>{
    calls.push({name,args});
    if(name==='simple_master_stores'){
