@@ -42,3 +42,11 @@
 .admin-master-store .admin-state{flex-shrink:0}
 @media(max-width:850px){.admin-master-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:540px){.admin-master-controls{grid-template-columns:1fr}.admin-master-store{display:grid;gap:12px}.admin-master-store .admin-state{width:100%}}
+
+/* Item 9: transparent storefront delivery quote and merchant delivery panel. */
+.mc-checkout-totals{padding:13px;border:1px solid var(--line,#dfe4ec);border-radius:12px;background:#f8fafc;display:grid;gap:5px;margin:10px 0}
+.mc-checkout-totals h2{margin:6px 0 0;font-size:1.1rem}
+.mc-checkout-totals .hint{margin:0;color:#667085;font-size:12px}
+#simple-delivery-settings .field{margin-top:14px}
+#simple-delivery-settings .field input[type=checkbox]{width:auto;min-width:18px;height:18px;vertical-align:middle}
+#simple-delivery-settings .field textarea{width:100%;max-width:100%;box-sizing:border-box}
