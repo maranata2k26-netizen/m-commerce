@@ -168,3 +168,35 @@ test('offline checkout database refuses to change payment method when replayed',
  assert.match(migration,/o\.payment_method is distinct from p_payment_method/);
  assert.match(migration,/public\.create_checkout_order_v117/);
 });
+
+
+test('changing map pin or delivery instructions changes checkout attempt before request submission',async()=>{
+ const h=harness({failCalls:3});await h.init();h.add(vidA);h.openCart();
+ h.setInput('delivery_method','delivery');
+ h.setInput('delivery_address','Av Siempre Viva 1234, Merlo');
+ h.context.window.__mcDeliveryLocation={lat:-34.665,lng:-58.726,formatted:'Av Siempre Viva 1234, Merlo',source:'search',place_id:'place-1'};
+ await h.forms.checkout.onsubmit(submit());
+ assert.equal(h.requests.length,1);
+ assert.equal(h.requests[0].delivery_address_source,'manual_map');
+ assert.equal(h.requests[0].delivery_latitude,-34.665);
+ h.context.window.__mcDeliveryLocation={lat:-34.666,lng:-58.727,formatted:'Av Siempre Viva 1234, Merlo',source:'search',place_id:'place-2'};
+ await h.forms.checkout.onsubmit(submit());
+ assert.equal(h.requests.length,2);
+ assert.notEqual(h.requests[0].checkout_attempt_id,h.requests[1].checkout_attempt_id);
+ h.setInput('mc_delivery_instructions','Portón rojo');
+ await h.forms.checkout.onsubmit(submit());
+ assert.equal(h.requests.length,3);
+ assert.notEqual(h.requests[1].checkout_attempt_id,h.requests[2].checkout_attempt_id);
+ assert.equal(h.requests[2].delivery_instructions,'Portón rojo');
+});
+
+test('manual delivery has no invented coordinates and remains within the server contract',async()=>{
+ const h=harness({failCalls:1});await h.init();h.add(vidA);h.openCart();
+ h.setInput('delivery_method','delivery');
+ h.setInput('delivery_address','Calle 1234, Merlo');
+ await h.forms.checkout.onsubmit(submit());
+ const p=h.requests[0];
+ assert.equal(p.delivery_address_source,'manual');
+ assert.equal(Object.hasOwn(p,'delivery_latitude'),false);
+ assert.equal(Object.hasOwn(p,'delivery_longitude'),false);
+});
