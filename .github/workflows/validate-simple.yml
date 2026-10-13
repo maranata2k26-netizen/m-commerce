@@ -1,7 +1,7 @@
 name: Validate M Commerce Simple
 on:
   push:
-    branches: ["feature/m-commerce-simple"]
+    branches: ["feature/m-commerce-simple", "integration/simple-commercial-20261013"]
   pull_request:
     paths:
       - "simple/**"
@@ -15,6 +15,7 @@ on:
       - "scripts/simple-delivery.test.cjs"
       - "scripts/simple-notifications.test.cjs"
       - "scripts/staging-live-smoke.test.cjs"
+      - "scripts/contact-whatsapp.test.cjs"
       - "supabase/**"
       - "vercel.json"
 jobs:
@@ -22,9 +23,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --ignore-scripts
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.x
+      - name: Validate recovered backend behavior
+        run: node --test tests/*.test.cjs
       - name: Validate browser JavaScript
         run: for script in simple/*.js; do node --check "$script" || exit 1; done
       - name: Validate merchant panel, inventory and order status handling
@@ -47,6 +55,8 @@ jobs:
         run: node --test scripts/frontend-environment.test.cjs
       - name: Smoke-test live staging origin (read-only HTTP)
         run: node --test scripts/staging-live-smoke.test.cjs
+      - name: Validate Joaco contact and WhatsApp links
+        run: node --test scripts/contact-whatsapp.test.cjs
       - name: Validate Vercel config
         run: node -e "JSON.parse(require('fs').readFileSync('vercel.json','utf8'))"
       - name: Type-check Edge Functions

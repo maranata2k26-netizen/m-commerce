@@ -54,7 +54,7 @@ function harness(options={}){
   field:(id)=>'<input id="'+id+'">',
   getSession:async()=>null,SUPABASE_URL:'https://staging.supabase.co',SUPABASE_KEY:'anon-test',
   crypto:{randomUUID:()=>{ids++;return '123e4567-e89b-42d3-a456-'+String(ids).padStart(12,'0');}},
-  fetch:async(url,init)=>{const body=JSON.parse(init.body);requests.push(body);if(failCalls-->0)throw Error('Simulated temporary connection failure');return {ok:true,json:async()=>({order:{id:'ok'},kind:'whatsapp',whatsapp_url:null})}},
+  fetch:async(url,init)=>{const body=JSON.parse(init.body);requests.push(body);if(failCalls-->0)throw Error('Simulated temporary connection failure');return {ok:true,json:async()=>options.response??({order:{id:'ok',order_number:42,total:1000},kind:'whatsapp',whatsapp_url:null})}},
   setBusy:(button,on)=>{if(button)button.disabled=on;},fail:e=>errors.push(String(e.message||e)),toast:x=>notices.push(x),
   setTimeout:()=>{},location:{href:'',search:options.returnQuery||''},URLSearchParams,console:{warn(){}}
  };
@@ -213,4 +213,9 @@ test('checkout quote shows the merchant delivery fee, and pickup remains fee-fre
  assert.equal(charge.textContent,'Envío: $120.5');
  delivery.value='pickup';delivery.onchange();
  assert.equal(total.textContent,'Total estimado: $1000');
+});
+
+test('confirmed offline checkout keeps a visible order reference and never clears an unconfirmed response',async()=>{
+ const confirmed=harness();await confirmed.init();confirmed.add(vidA);confirmed.openCart();await confirmed.forms.checkout.onsubmit({preventDefault(){},submitter:{}});assert.match(confirmed.app.innerHTML,/Número de pedido:[\s\S]*42/);assert.match(confirmed.app.innerHTML,/Total confirmado/);
+ const incomplete=harness({response:{}});await incomplete.init();incomplete.add(vidA);incomplete.openCart();await incomplete.forms.checkout.onsubmit({preventDefault(){},submitter:{}});assert.equal(incomplete.notices.length,0);assert.match(incomplete.errors.join(' '),/No recibimos la confirmación/);assert.match(incomplete.app.innerHTML,/Ver pedido/);
 });

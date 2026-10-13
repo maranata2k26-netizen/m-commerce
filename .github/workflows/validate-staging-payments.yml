@@ -23,6 +23,11 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --ignore-scripts
       - name: Check billing integration contracts (no secrets or external payments)
         run: node --test scripts/billing-contract.test.cjs scripts/frontend-environment.test.cjs
       - uses: denoland/setup-deno@v2
