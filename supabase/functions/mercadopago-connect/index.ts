@@ -1,12 +1,12 @@
-import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { createClient } from "jsr:@supabase/supabase-js@2";
+import { createClient } from "npm:@supabase/supabase-js@2.117.2";
 
 const SUPABASE_URL=Deno.env.get("SUPABASE_URL")??"";
 const SERVICE_ROLE=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")??"";
 const ANON=Deno.env.get("SUPABASE_ANON_KEY")??"";
 const CLIENT_ID=(Deno.env.get("MERCADOPAGO_CLIENT_ID")??"").trim();
 const CLIENT_SECRET=(Deno.env.get("MERCADOPAGO_CLIENT_SECRET")??"").trim();
-const PUBLIC_URL="https://mcommerce.vercel.app";
+const IS_STAGING=SUPABASE_URL.replace(/\/+$/,"")==="https://jcgvunffeskkbgsbomgy.supabase.co";
+const PUBLIC_URL=(IS_STAGING?"https://m-commerce-staging.vercel.app":(Deno.env.get("M_COMMERCE_PUBLIC_ORIGIN")||"https://mcommerce.vercel.app")).replace(/\/$/,"");
 const OLD_PUBLIC_URL="https://m-commerce-ar.vercel.app";
 const LEGACY_PUBLIC_URL="https://j3-plataform.vercel.app";
 const CALLBACK=`${SUPABASE_URL}/functions/v1/mercadopago-connect`;
@@ -16,7 +16,7 @@ function b64url(bytes:Uint8Array){return btoa(String.fromCharCode(...bytes)).rep
 async function sha256(s:string){return new Uint8Array(await crypto.subtle.digest("SHA-256",new TextEncoder().encode(s)))}
 function random(n=48){return b64url(crypto.getRandomValues(new Uint8Array(n)))}
 function safeError(e:unknown){if(e instanceof Error&&KNOWN.has(e.message))return e.message;const x=e as Record<string,unknown>|null;const candidate=String(x?.message||x?.code||"");return KNOWN.has(candidate)?candidate:"INTERNAL_ERROR"}
-function cors(req:Request){const o=req.headers.get("origin");const allowed=o===PUBLIC_URL||o===OLD_PUBLIC_URL||o===LEGACY_PUBLIC_URL;return {"Access-Control-Allow-Origin":allowed?o:PUBLIC_URL,"Access-Control-Allow-Headers":"authorization, apikey, content-type","Access-Control-Allow-Methods":"GET,POST,OPTIONS","Vary":"Origin"}}
+function cors(req:Request){const o=req.headers.get("origin");const allowed=o===PUBLIC_URL||o===OLD_PUBLIC_URL||o===LEGACY_PUBLIC_URL;return {"Access-Control-Allow-Origin":allowed&&o?o:PUBLIC_URL,"Access-Control-Allow-Headers":"authorization, apikey, content-type","Access-Control-Allow-Methods":"GET,POST,OPTIONS","Vary":"Origin"}}
 function json(req:Request,b:unknown,status=200){return new Response(JSON.stringify(b),{status,headers:{...cors(req),"content-type":"application/json","cache-control":"no-store"}})}
 function redirect(url:string){return new Response(null,{status:303,headers:{Location:url,"Cache-Control":"no-store","Referrer-Policy":"no-referrer"}})}
 function email(v:unknown){return String(v??"").trim().toLowerCase()}
@@ -64,6 +64,8 @@ Deno.serve(async(req)=>{
    const token=await exchangeCode(code,found.data.code_verifier);
    const profile=await mpProfile(String(token.access_token));
    const mpUserId=String(token.user_id||profile.id||"");if(!mpUserId)throw new Error("NO_MP_USER");
+   const billingUsage=await admin.from("platform_billing_accounts").select("provider").eq("mp_user_id",mpUserId).in("status",["connected","pending_confirmation"]).limit(1).maybeSingle();
+   if(billingUsage.error)throw billingUsage.error;if(billingUsage.data)return redirect(target(callbackFlow,false,"account_in_use"));
    const duplicate=await admin.from("mercadopago_connections").select("site_id").eq("mp_user_id",mpUserId).eq("status","connected").neq("site_id",found.data.site_id).limit(1).maybeSingle();
    if(duplicate.error)throw duplicate.error;if(duplicate.data)return redirect(target(callbackFlow,false,"account_in_use"));
    const expires=token.expires_in?new Date(Date.now()+Number(token.expires_in)*1000).toISOString():null;
@@ -85,7 +87,7 @@ Deno.serve(async(req)=>{
   const siteId=String(body?.site_id||"");
   if(!await canManageMerchant(admin,user.id,siteId))return json(req,{error:"OWNER_REQUIRED",message:"Solo el dueño del comercio o el administrador maestro puede administrar Mercado Pago."},403);
   if(body.action==="disconnect"){const stopped=await admin.from("mercadopago_connections").update({status:"disconnected",updated_at:new Date().toISOString()}).eq("site_id",siteId);if(stopped.error)throw stopped.error;await admin.from("oauth_states").delete().eq("site_id",siteId);return json(req,{connected:false})}
-  if(!CLIENT_ID||!CLIENT_SECRET)return json(req,{error:"OAUTH_APP_NOT_CONFIGURED"},503);
+  if(!CLIENT_ID||!CLIENT_SECRET)return json(req,{error:"OAUTH_APP_NOT_CONFIGURED",message:"Mercado Pago todavía no está configurado en esta plataforma. Contactá a M Commerce para habilitar la conexión."},503);
   await admin.from("oauth_states").delete().eq("user_id",user.id);await admin.from("oauth_states").delete().lt("expires_at",new Date().toISOString());
   const opaque=random(32),state=`mc.${opaque}`,verifier=random(64),challenge=b64url(await sha256(verifier)),stateHash=b64url(await sha256(state));
   const saved=await admin.from("oauth_states").insert({state_hash:stateHash,site_id:siteId,user_id:user.id,code_verifier:verifier,flow_type:"merchant",expires_at:new Date(Date.now()+10*60_000).toISOString()});if(saved.error)throw saved.error;
