@@ -66,3 +66,7 @@ GitHub Actions: Simple, run 38473323356, **success**; staging payments, run 3847
 Supabase staging aplicado: reconciliación con versión remota `20261013213200`, equivalente al archivo local `20261013213042`. Edge activas: platform-admin v8, j3-billing v7, j3-billing-webhook v6. Se requiere reconciliar los timestamps del historial antes de aplicar la cadena en otro entorno.
 
 La revisión adicional de Mercado Pago encontró inicio de sesión sujeto a verificación. El intento de acceso por el método disponible fue rechazado por el proveedor; no se accedió a sus credenciales ni se modificó la cuenta. Sin acceso verificado y sin cuentas de prueba conectadas a staging, la identidad y el circuito real de cobro siguen pendientes. No se sustituyó esta evidencia por el alias personal ni por una simulación.
+
+## Ampliación del cierre: ensayo de actualización
+
+Se ejecutó el ensayo aislado sobre metadatos del esquema productivo sin copiar clientes: 131 tablas, 239 funciones, 655 restricciones, 20 triggers y 126 políticas reconstruidas con sus permisos. Las 18 migraciones pendientes se aplicaron correctamente y la suite integral pasó otras 92 comprobaciones con rollback. Ver docs/SCHEMA_REHEARSAL_20261014.md para reproducción y límites. Este ensayo de esquema ya está resuelto; la validación genuina de Mercado Pago, SMTP comercial, backup completo y prueba con datos representativos siguen sin sustituirse por esta evidencia.
