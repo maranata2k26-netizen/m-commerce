@@ -1,10 +1,20 @@
 name: Validate M Commerce Simple
 on:
   push:
-    branches: ["feature/m-commerce-simple"]
+    branches: ["feature/m-commerce-simple", "integration/simple-commercial-20261013"]
   pull_request:
     paths:
       - "simple/**"
+      - "scripts/frontend-environment.test.cjs"
+      - "scripts/auth-flow.test.cjs"
+      - "scripts/simple-onboarding.test.cjs"
+      - "scripts/simple-checkout.test.cjs"
+      - "scripts/simple-merchant-panel.test.cjs"
+      - "scripts/simple-security.test.cjs"
+      - "scripts/simple-master.test.cjs"
+      - "scripts/simple-delivery.test.cjs"
+      - "scripts/simple-notifications.test.cjs"
+      - "scripts/staging-live-smoke.test.cjs"
       - "scripts/contact-whatsapp.test.cjs"
       - "supabase/**"
       - "vercel.json"
@@ -13,11 +23,38 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --ignore-scripts
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.x
+      - name: Validate recovered backend behavior
+        run: node --test tests/*.test.cjs
       - name: Validate browser JavaScript
-        run: node --check simple/simple.js && node --check simple/simple-bootstrap.js && node --check simple/simple-enhancements-v2.js
+        run: for script in simple/*.js; do node --check "$script" || exit 1; done
+      - name: Validate merchant panel, inventory and order status handling
+        run: node --test scripts/simple-merchant-panel.test.cjs
+      - name: Validate merchant inbox, payment notifications and email flows
+        run: node --test scripts/simple-notifications.test.cjs
+      - name: Validate delivery costs, maps fallback, and tenant delivery permissions
+        run: node --test scripts/simple-delivery.test.cjs
+      - name: Validate Master Panel and moderation contracts
+        run: node --test scripts/simple-master.test.cjs
+      - name: Validate tenant isolation and internal audit authorization
+        run: node --test scripts/simple-security.test.cjs
+      - name: Validate Simple checkout cart, order retry and inventory boundaries
+        run: node --test scripts/simple-checkout.test.cjs
+      - name: Validate Simple onboarding, draft URLs and retry safety
+        run: node --test scripts/simple-onboarding.test.cjs
+      - name: Validate registration, email confirmation and recovery flows
+        run: node --test scripts/auth-flow.test.cjs
+      - name: Validate staging/production client isolation
+        run: node --test scripts/frontend-environment.test.cjs
+      - name: Smoke-test live staging origin (read-only HTTP)
+        run: node --test scripts/staging-live-smoke.test.cjs
       - name: Validate Joaco contact and WhatsApp links
         run: node --test scripts/contact-whatsapp.test.cjs
       - name: Validate Vercel config

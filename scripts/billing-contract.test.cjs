@@ -1,0 +1,175 @@
+'use strict';
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+
+const fn = name => fs.readFileSync(path.join(__dirname, '..', 'supabase', 'functions', name, 'index.ts'), 'utf8');
+const staging = 'https://m-commerce-staging.vercel.app';
+
+test('payment endpoints exist as tracked source files', () => {
+  for (const name of ['j3-billing', 'j3-billing-account', 'j3-billing-webhook',
+    'mercadopago-connect', 'mercadopago-webhook', 'checkout-create', 'simple-checkout']) {
+    assert.ok(fn(name).length > 1000, name);
+  }
+});
+
+test('staging billing, OAuth and checkout all keep their returns on staging', () => {
+  for (const name of ['j3-billing', 'j3-billing-account', 'mercadopago-connect',
+    'checkout-create', 'platform-admin', 'simple-checkout']) {
+    assert.ok(fn(name).includes(staging), name);
+  }
+});
+
+test('merchant and subscription funds use distinct account records', () => {
+  assert.match(fn('j3-billing'), /from\(['"]platform_billing_accounts['"]\)/);
+  assert.match(fn('j3-billing-account'), /from\(['"]platform_billing_accounts['"]\)/);
+  assert.match(fn('checkout-create'), /from\(['"]mercadopago_connections['"]\)/);
+  assert.match(fn('mercadopago-connect'), /from\(["']mercadopago_connections["']\)/);
+  assert.match(fn('mercadopago-connect'), /from\(["']platform_billing_accounts["']\)/);
+});
+
+test('platform billing confirmation checks recipient identity and merchant conflicts', () => {
+  const code = fn('j3-billing-account');
+  assert.match(code, /ACCOUNT_EMAIL_MISMATCH/);
+  assert.match(code, /MP_ACCOUNT_ALREADY_USED/);
+  assert.match(code, /ADMIN_REQUIRED/);
+  assert.match(code, /expected_email/);
+  assert.match(fn('mercadopago-connect'), /billingUsage/);
+});
+
+test('subscription payment webhooks fail closed without a valid signature', () => {
+  const code = fn('j3-billing-webhook');
+  assert.match(code, /WEBHOOK_SECRET_NOT_CONFIGURED/);
+  assert.match(code, /INVALID_SIGNATURE/);
+  assert.match(code, /validSignature\(req,dataId\)/);
+  assert.match(code, /SUBSCRIPTION_CURRENCY_MISMATCH/);
+  assert.match(code, /provider_subscription_id/);
+  assert.match(code, /ps==='authorized'\?\(hasApprovedPayment\?'active':'pending'\)/);
+});
+
+test('staging checkout cannot silently bill the legacy Maranata merchant for a missing store id', () => {
+  assert.match(fn('checkout-create'), /IS_STAGING\?'':LEGACY_SITE_ID/);
+});
+
+test('edge code does not embed credentials or production service-role JWTs', () => {
+  for (const name of ['j3-billing', 'j3-billing-account', 'j3-billing-webhook',
+    'mercadopago-connect', 'checkout-create', 'platform-admin', 'simple-checkout']) {
+    const code = fn(name);
+    assert.doesNotMatch(code, /sb_secret_[a-zA-Z0-9_-]{20,}/, name);
+    assert.doesNotMatch(code, /eyJhbGciOiJ[A-Za-z0-9_-]{100,}/, name);
+  }
+});
+
+
+test('platform billing refuses a connected merchant account before requesting a subscription', () => {
+  const source = fn('j3-billing');
+  const collector = source.split('async function collectorToken')[1]?.split('async function syncPreapproval')[0] || '';
+  assert.match(collector, /J3_BILLING_IDENTITY_NOT_CONFIRMED/);
+  assert.match(collector, /confirmed_at/);
+  assert.match(collector, /account_email/);
+  assert.match(collector, /expected_email/);
+  assert.match(collector, /from\('mercadopago_connections'\)/);
+  assert.match(collector, /eq\('mp_user_id',String\(a\.mp_user_id\)\)/);
+  assert.match(collector, /eq\('status','connected'\)/);
+  assert.match(collector, /MP_ACCOUNT_ALREADY_USED/);
+});
+
+test('platform OAuth callback cannot replace an existing connected collector with a different account', () => {
+  const src = fn('mercadopago-connect');
+  const platformFlow = src.split('if(callbackFlow==="platform_billing"){')[1]?.split('if(!await canManageMerchant')[0] || '';
+  assert.match(platformFlow, /from\("platform_billing_accounts"\)/);
+  assert.match(platformFlow, /prior\.data\?\.status==="connected"/);
+  assert.match(platformFlow, /disconnect_required/);
+  assert.ok(platformFlow.indexOf('disconnect_required') < platformFlow.indexOf('.upsert({provider:"mercadopago"'));
+});
+
+test('subscription webhook checks collector identity and merchant collision before applying a payment', () => {
+  const src = fn('j3-billing-webhook');
+  const account = src.split('async function account')[1]?.split('async function token')[0] || '';
+  assert.match(account, /J3_BILLING_IDENTITY_NOT_CONFIRMED/);
+  assert.match(account, /from\('mercadopago_connections'\)/);
+  assert.match(account, /MP_ACCOUNT_ALREADY_USED/);
+  assert.match(account, /allowed_shared_merchant_site_id/);
+  assert.match(account, /merchantUsage.length!==1/);
+});
+
+test('admin billing account status reports existing identity collision rather than claiming ready', () => {
+  const src = fn('j3-billing-account');
+  const statusFlow = src.split('if(action==="account_status")')[1]?.split('if(action==="account_start")')[0] || '';
+  assert.match(statusFlow, /account_conflict:conflict/);
+  assert.match(statusFlow, /connected:a\.status==="connected"&&!conflict/);
+  assert.match(statusFlow, /allowed_shared_merchant_site_id/);
+});
+
+test('staging checkout cannot use legacy merchant token even if legacy site id is supplied', () => {
+  const src = fn('checkout-create');
+  assert.match(src, /if\(!IS_STAGING&&siteId===LEGACY_SITE_ID&&LEGACY_MP_TOKEN\)/);
+});
+
+test('shared receiver is opt-in for exactly one connected site across all billing paths', () => {
+  for (const name of ['j3-billing','j3-billing-webhook','j3-billing-account']) {
+    const code = fn(name);
+    assert.match(code, /allowed_shared_merchant_site_id/, name);
+    assert.match(code, /length!==1/, name);
+    assert.match(code, /MP_ACCOUNT_ALREADY_USED/, name);
+  }
+});
+
+test('shared authorization is admin-only and checks verified payer email plus exact merchant site', () => {
+  const code = fn('j3-billing-account');
+  assert.match(code, /if\(action==="account_allow_shared_merchant"\)/);
+  assert.match(code, /await authUser\(req,admin\)/);
+  assert.match(code, /J3_BILLING_IDENTITY_NOT_CONFIRMED/);
+  assert.match(code, /SHARED_SITE_MISMATCH/);
+  assert.match(code, /allowed_shared_merchant_site_id:siteId/);
+  const callback = fn('mercadopago-connect');
+  assert.match(callback, /billingUsage\.data\.allowed_shared_merchant_site_id/);
+});
+
+test('the migration defaults to deny-all and adds a single optional FK merchant allowance', () => {
+  const sql = fs.readFileSync(path.join(__dirname, '..', 'supabase', 'migrations',
+    '20261011192234_authorize_shared_billing_merchant.sql'), 'utf8');
+  assert.match(sql, /allowed_shared_merchant_site_id uuid/i);
+  assert.match(sql, /REFERENCES public\.sites\(id\)/i);
+  assert.doesNotMatch(sql, /DEFAULT\s+['"0-9a-f-]+/i);
+});
+
+test('concurrent checkout creation is database-claimed and uses a persistent provider retry key', () => {
+  const code=fn('j3-billing');
+  assert.match(code,/platform_claim_subscription_attempt/);
+  assert.match(code,/SUBSCRIPTION_CREATION_IN_PROGRESS/);
+  assert.match(code, /x-idempotency-key':`j3-sub-\$\{siteId\}-\$\{attemptId\}`/);
+  assert.match(code,/provider_creation_attempt_id:null/);
+  assert.match(code,/last_paid_at:null/);
+});
+
+test('provider authorization alone never activates an unpaid subscription', () => {
+  for(const name of ['j3-billing','j3-billing-webhook']){
+    const code=fn(name);
+    assert.match(code,/hasApprovedPayment/);
+    assert.match(code,/hasApprovedPayment\?'active':'pending'/);
+    assert.match(code,/ps==='authorized'&&hasApprovedPayment/);
+  }
+  assert.match(fn('j3-billing-webhook'),/status==='approved'/);
+});
+
+test('repeated subscription payment callbacks cannot duplicate activity', () => {
+  const code=fn('j3-billing-webhook');
+  assert.match(code,/insertPaymentActivityOnce/);
+  assert.match(code,/error\.code!=='23505'/);
+  assert.match(code,/automatic_payment_approved/);
+  assert.match(code,/automatic_payment_reversed/);
+  assert.match(code,/automatic_payment_failed/);
+  assert.match(code,/!Number\.isFinite\(expected\)\|\|expected<=0/);
+});
+
+test('subscription DB migration uses security invoker and deny-by-default RPC privileges', () => {
+  const sql=fs.readFileSync(path.join(__dirname,'..','supabase','migrations',
+    '20261011193500_subscriptions_singleflight_and_event_idempotency.sql'),'utf8');
+  assert.match(sql,/provider_creation_claimed_at/);
+  assert.match(sql,/SECURITY INVOKER/i);
+  assert.match(sql,/REVOKE ALL ON FUNCTION public\.platform_claim_subscription_attempt\(uuid\) FROM PUBLIC, anon, authenticated/i);
+  assert.match(sql,/GRANT EXECUTE ON FUNCTION public\.platform_claim_subscription_attempt\(uuid\) TO service_role/i);
+  assert.match(sql,/CREATE UNIQUE INDEX IF NOT EXISTS subscription_events_mp_payment_once_idx/i);
+});

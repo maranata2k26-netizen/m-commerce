@@ -1,0 +1,20 @@
+const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),{PGlite}=require('@electric-sql/pglite');
+test('un usuario sin comercio no puede elevar su rol; perfil normal y administración de servidor se conservan',async()=>{const db=new PGlite();try{
+ await db.exec(`create role anon;create role authenticated;create role service_role bypassrls;create schema auth;
+ create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;
+ create function auth.role() returns text language sql stable as $$select nullif(current_setting('request.jwt.claim.role',true),'')$$;
+ create table profiles(id uuid primary key,full_name text,role text not null default 'customer' check(role in ('customer','admin')));
+ alter table profiles enable row level security;grant usage on schema auth to authenticated,service_role;grant select,update,insert on profiles to authenticated,service_role;
+ create function public.is_admin() returns boolean language sql stable security definer as $$select exists(select 1 from public.profiles where id=auth.uid() and role='admin')$$;
+ create policy own_read on profiles for select using(id=auth.uid() or public.is_admin());
+ create policy own_update on profiles for update using(id=auth.uid() or public.is_admin()) with check(id=auth.uid() or public.is_admin());
+ insert into profiles values('11111111-1111-4111-8111-111111111111','Fixture','customer'),('22222222-2222-4222-8222-222222222222','Admin','admin');`);
+ await db.exec(fs.readFileSync('supabase/migrations/20261008020000_profile_role_guard.sql','utf8'));
+ await db.exec(`select set_config('request.jwt.claim.sub','11111111-1111-4111-8111-111111111111',false);select set_config('request.jwt.claim.role','authenticated',false);set role authenticated;`);
+ await assert.rejects(db.exec("update profiles set role='admin' where id=auth.uid()"),/PROFILE_ROLE_CHANGE_FORBIDDEN/);
+ await db.exec("update profiles set full_name='Updated fixture' where id=auth.uid()");assert.equal((await db.query('select role,full_name from profiles')).rows[0].role,'customer');assert.equal((await db.query('select full_name from profiles')).rows[0].full_name,'Updated fixture');
+ await db.exec(`reset role;select set_config('request.jwt.claim.sub','22222222-2222-4222-8222-222222222222',false);set role authenticated;`);
+ await assert.rejects(db.exec("update profiles set role='admin' where id='11111111-1111-4111-8111-111111111111'"),/PROFILE_ROLE_CHANGE_FORBIDDEN/);
+ await db.exec(`reset role;select set_config('request.jwt.claim.role','service_role',false);set role service_role;update profiles set role='admin' where id='11111111-1111-4111-8111-111111111111';`);
+ assert.equal((await db.query("select role from profiles where id='11111111-1111-4111-8111-111111111111'")).rows[0].role,'admin');
+ }finally{await db.close();}});
