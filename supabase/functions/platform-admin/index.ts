@@ -14,10 +14,12 @@ const LEGACY_ORIGINS=new Set([
   'https://j3-plataform.joaquinjesusmusic.chatgpt.site'
 ]);
 const RESEND_API_KEY=Deno.env.get('RESEND_API_KEY')??'';
+const BREVO_API_KEY=Deno.env.get('BREVO_API_KEY')??'';
 const J3_FROM_EMAIL=Deno.env.get('J3_FROM_EMAIL')??'';
 const J3_FROM_NAME=Deno.env.get('J3_FROM_NAME')||'M Commerce';
 const J3_REPLY_TO=Deno.env.get('J3_REPLY_TO')??'';
-const customMailReady=Boolean(RESEND_API_KEY&&J3_FROM_EMAIL);
+const mailTransport=RESEND_API_KEY?'resend':BREVO_API_KEY?'brevo':null;
+const customMailReady=Boolean(mailTransport&&J3_FROM_EMAIL);
 
 function cors(req:Request){
   const origin=req.headers.get('origin')||DEFAULT_PUBLIC;
@@ -36,10 +38,13 @@ async function sendJ3Mail(to:string,kind:'invite'|'seller'|'recovery',link:strin
  const payload:any={from:`${J3_FROM_NAME} <${J3_FROM_EMAIL}>`,to:[to],subject:copy.subject,html:mailHtml(copy,link)};
  if(J3_REPLY_TO)payload.reply_to=J3_REPLY_TO;
  let response:Response;
- try{response=await fetch('https://api.resend.com/emails',{method:'POST',headers:{authorization:`Bearer ${RESEND_API_KEY}`,'content-type':'application/json'},body:JSON.stringify(payload),signal:AbortSignal.timeout(8000)});}catch{throw new Error('J3_MAIL_UNAVAILABLE');}
+ const brevoPayload:any={sender:{name:J3_FROM_NAME,email:J3_FROM_EMAIL},to:[{email:to}],subject:copy.subject,htmlContent:payload.html};
+ if(J3_REPLY_TO)brevoPayload.replyTo={email:J3_REPLY_TO};
+ try{response=await fetch(mailTransport==='brevo'?'https://api.brevo.com/v3/smtp/email':'https://api.resend.com/emails',{method:'POST',headers:mailTransport==='brevo'?{'api-key':BREVO_API_KEY,'content-type':'application/json'}:{authorization:`Bearer ${RESEND_API_KEY}`,'content-type':'application/json'},body:JSON.stringify(mailTransport==='brevo'?brevoPayload:payload),signal:AbortSignal.timeout(8000)});}catch{throw new Error('J3_MAIL_UNAVAILABLE');}
  if(!response.ok)throw new Error('J3_MAIL_SEND_FAILED');
  const out=await response.json().catch(()=>null);
- if(!out||typeof out.id!=='string'||!out.id.trim())throw new Error('J3_MAIL_INVALID_RESPONSE');
+ const messageId=mailTransport==='brevo'?out?.messageId:out?.id;
+ if(typeof messageId!=='string'||!messageId.trim())throw new Error('J3_MAIL_INVALID_RESPONSE');
  return out;
 }
 function tokenHash(g:any){return g?.data?.properties?.hashed_token||g?.data?.properties?.hashedToken||g?.data?.properties?.token_hash||''}
@@ -50,7 +55,7 @@ Deno.serve(async(req)=>{
  if(req.method!=='POST')return json(req,{error:'METHOD_NOT_ALLOWED'},405);
  try{
   const master=await requireMaster(req);const body=await req.json();const action=String(body?.action||'');const email=String(body?.email||'').trim().toLowerCase();const fullName=String(body?.full_name||'').trim();const admin=createClient(SUPABASE_URL,SERVICE_ROLE,{auth:{persistSession:false}});
-  if(action==='mail_status')return json(req,{ok:true,provider:customMailReady?'j3':'manual_link',transport:customMailReady?'resend':null,sender_name:J3_FROM_NAME,sender_domain:J3_FROM_EMAIL.includes('@')?J3_FROM_EMAIL.split('@')[1]:null,canonical_origin:DEFAULT_PUBLIC});
+  if(action==='mail_status')return json(req,{ok:true,provider:customMailReady?'j3':'manual_link',transport:customMailReady?mailTransport:null,sender_name:J3_FROM_NAME,sender_domain:J3_FROM_EMAIL.includes('@')?J3_FROM_EMAIL.split('@')[1]:null,canonical_origin:DEFAULT_PUBLIC});
   if(action==='seller_invite'){
     if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return json(req,{error:'INVALID_EMAIL',message:'Ingresá un email válido.'},422);
     const u=await findUser(admin,email);const existing=Boolean(u);const type:'invite'|'recovery'=existing?'recovery':'invite';
