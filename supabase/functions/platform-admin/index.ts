@@ -48,7 +48,7 @@ async function sendJ3Mail(to:string,kind:'invite'|'seller'|'recovery',link:strin
  return out;
 }
 function tokenHash(g:any){return g?.data?.properties?.hashed_token||g?.data?.properties?.hashedToken||g?.data?.properties?.token_hash||''}
-function directLink(g:any,type:'invite'|'recovery',mode:'invite'|'recovery'|'seller',siteId?:string){const hash=tokenHash(g);if(!hash)throw new Error('J3_AUTH_TOKEN_MISSING');const u=new URL(DEFAULT_PUBLIC+'/auth');u.searchParams.set('mode',mode);u.searchParams.set('type',type);u.searchParams.set('token_hash',hash);if(siteId)u.searchParams.set('site',siteId);if(mode==='invite'&&siteId)u.searchParams.set('install','1');return u.toString()}
+function directLink(g:any,type:'invite'|'recovery',mode:'invite'|'recovery'|'seller',siteId?:string,simple=false){const hash=tokenHash(g);if(!hash)throw new Error('J3_AUTH_TOKEN_MISSING');if(simple){const verify=new URL(SUPABASE_URL+'/auth/v1/verify');verify.searchParams.set('token',hash);verify.searchParams.set('type',type);verify.searchParams.set('redirect_to',DEFAULT_PUBLIC+'/simple/app?reset=1');return verify.toString()}const u=new URL(DEFAULT_PUBLIC+'/auth');u.searchParams.set('mode',mode);u.searchParams.set('type',type);u.searchParams.set('token_hash',hash);if(siteId)u.searchParams.set('site',siteId);if(mode==='invite'&&siteId)u.searchParams.set('install','1');return u.toString()}
 
 Deno.serve(async(req)=>{
  if(req.method==='OPTIONS')return new Response('ok',{headers:cors(req)});
@@ -66,7 +66,7 @@ Deno.serve(async(req)=>{
     return json(req,{ok:true,existing_user:existing,email,mail_provider:customMailReady?'j3':'manual_link',delivery:customMailReady?'email':'manual_link',access_link:customMailReady?null:link});
   }
   const siteId=String(body?.site_id||'');if(!/^[0-9a-f-]{36}$/i.test(siteId))return json(req,{error:'INVALID_SITE'},422);
-  const site=await admin.from('sites').select('id,name').eq('id',siteId).maybeSingle();if(site.error)throw site.error;if(!site.data)throw new Error('SITE_ACCESS_DENIED');
+  const site=await admin.from('sites').select('id,name,product_tier').eq('id',siteId).maybeSingle();if(site.error)throw site.error;if(!site.data)throw new Error('SITE_ACCESS_DENIED');
   if(action==='delete_preview'){const preview=await admin.rpc('platform_delete_site_preview',{p_site_id:siteId});if(preview.error)throw preview.error;return json(req,preview.data)}
   if(action==='delete_site'){
     const confirmName=String(body?.confirm_name||'');const confirmPhrase=String(body?.confirm_phrase||'');
@@ -80,14 +80,14 @@ Deno.serve(async(req)=>{
     if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return json(req,{error:'INVALID_EMAIL',message:'Ingresá un email válido.'},422);
     const u=await findUser(admin,email);const existing=Boolean(u);const type:'invite'|'recovery'=existing?'recovery':'invite';
     const generated=existing?await admin.auth.admin.generateLink({type:'recovery',email}):await admin.auth.admin.generateLink({type:'invite',email,options:{data:{full_name:fullName,site_id:siteId,merchant_role:'merchant_owner'}}});if(generated.error)throw generated.error;
-    const userId=generated.data?.user?.id||u?.id||null;if(!userId)throw new Error('USER_NOT_CREATED');const link=directLink(generated,type,existing?'recovery':'invite',siteId);
+    const userId=generated.data?.user?.id||u?.id||null;if(!userId)throw new Error('USER_NOT_CREATED');const link=directLink(generated,type,existing?'recovery':'invite',siteId,site.data.product_tier==='simple');
     const membership=await admin.rpc('platform_assign_site_owner',{p_site_id:siteId,p_user_id:userId,p_email:email,p_full_name:fullName});if(membership.error)throw membership.error;
     if(customMailReady)await sendJ3Mail(email,existing?'recovery':'invite',link,fullName,site.data.name||'');
     return json(req,{ok:true,existing_user:existing,email,site_id:siteId,mail_provider:customMailReady?'j3':'manual_link',delivery:customMailReady?'email':'manual_link',access_link:link,canonical_origin:DEFAULT_PUBLIC});
   }
   if(action==='recovery'){
     if(!email)return json(req,{error:'EMAIL_REQUIRED'},422);
-    const generated=await admin.auth.admin.generateLink({type:'recovery',email});if(generated.error)throw generated.error;const link=directLink(generated,'recovery','recovery',siteId);
+    const generated=await admin.auth.admin.generateLink({type:'recovery',email});if(generated.error)throw generated.error;const link=directLink(generated,'recovery','recovery',siteId,site.data.product_tier==='simple');
     if(customMailReady)await sendJ3Mail(email,'recovery',link,fullName,site.data.name||'');
     return json(req,{ok:true,mail_provider:customMailReady?'j3':'manual_link',delivery:customMailReady?'email':'manual_link',access_link:link,canonical_origin:DEFAULT_PUBLIC});
   }
