@@ -14,6 +14,7 @@ Validación ejecutada en staging:
 - Ejecución anónima real de dos RPC administrativas: insufficient_privilege. simple_public_plan sigue funcionando anónimamente.
 - Suite supabase/tests/simple-security-staging.sql ejecutada íntegramente con rollback después del cambio: sin excepciones; aislamiento entre comerciantes y autorización conservados.
 - Advisors posterior: avisos de ejecución anónima bajaron de 28 a 18 y autenticada de 173 a 170.
+- Ensayo aislado actualizado para incluir todas las migraciones posteriores al baseline, incluida la del 27/10: 19 migraciones aprobadas, suite integral de 92 comprobaciones y suite de privilegios aprobadas. El selector anterior terminaba implícitamente el 19/10 y habría omitido esta migración; se corrigió. Esto sigue siendo ensayo de esquema, no restauración de datos productivos.
 
 Las 33 tablas sin políticas mantienen RLS y denegación por defecto a clientes. 32 también carecen de SELECT directo; hardware_order_counters conserva SELECT concedido, pero RLS sin políticas impide visibilidad para los roles cliente. No se agregaron políticas permisivas para ocultar el aviso. Deben mantenerse los accesos mediante backend/RPC autorizadas.
 
