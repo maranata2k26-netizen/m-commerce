@@ -50,7 +50,7 @@ function harness(options={}){
  const context={
   app,window:{M_COMMERCE_OFFICIAL_ORIGIN:'https://m-commerce-staging.vercel.app'},
   document:{body:{appendChild(){}},createElement:newDrawer,querySelectorAll:selector=>selector==='.add'?[addButton]:[],getElementById},
-  rpc:async()=>data,esc:s=>String(s??''),money:n=>'$'+String(n),setSeo(){},
+  rpc:async(name)=>name==='get_order_tracking'?(options.trackingError?Promise.reject(Error('temporary failure')):options.trackedOrder??null):data,esc:s=>String(s??''),money:n=>'$'+String(n),setSeo(){},
   field:(id)=>'<input id="'+id+'">',
   getSession:async()=>null,SUPABASE_URL:'https://staging.supabase.co',SUPABASE_KEY:'anon-test',
   crypto:{randomUUID:()=>{ids++;return '123e4567-e89b-42d3-a456-'+String(ids).padStart(12,'0');}},
@@ -160,6 +160,23 @@ test('Mercado Pago returns display neutral verification, never false approval',a
  assert.match(pending.app.innerHTML,/pendiente de confirmación/);
  const untrusted=harness({returnQuery:'?payment=forged'});await untrusted.init();
  assert.doesNotMatch(untrusted.app.innerHTML,/Estado del pago/);
+});
+
+test('payment return displays approval only for the matching server-confirmed order and store',async()=>{
+ const tracked={id:'return-order',site_id:'123e4567-e89b-42d3-a456-426614174003',order_number:59,payment_method:'mercadopago',payment_status:'approved',total:123.45};
+ const query='?payment=success&order=return-order&token=private-tracking-token-long-enough';
+ const approved=harness({returnQuery:query,trackedOrder:tracked});await approved.init();
+ assert.match(approved.app.innerHTML,/Pago aprobado\. Pedido #59/);
+ assert.match(approved.app.innerHTML,/123\.45/);
+ for(const change of [{id:'other-order'},{site_id:'other-store'},{payment_method:'cash'}]){
+  const denied=harness({returnQuery:query,trackedOrder:{...tracked,...change}});await denied.init();
+  assert.doesNotMatch(denied.app.innerHTML,/Pago aprobado/);
+ }
+ const unavailable=harness({returnQuery:query,trackingError:true});await unavailable.init();
+ assert.match(unavailable.app.innerHTML,/Tu pago se está verificando/);
+ const reversed=harness({returnQuery:query,trackedOrder:{...tracked,payment_status:'refunded'}});await reversed.init();
+ assert.match(reversed.app.innerHTML,/El pago fue devuelto/);
+ assert.doesNotMatch(reversed.app.innerHTML,/Pago aprobado/);
 });
 
 test('offline checkout database refuses to change payment method when replayed',()=>{
