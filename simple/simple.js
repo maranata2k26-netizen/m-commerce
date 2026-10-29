@@ -354,13 +354,20 @@ async function appRoute(){
  if(!session)return authView(params.get("mode"));
  if(params.get("password_updated")==="1")toast("Contraseña actualizada correctamente.");
  if(params.get("verified")==="1")toast("Ingresaste correctamente a M Commerce.");
- let site=await rpc("simple_my_store").catch(()=>null);
+ let site;try{site=await rpc("simple_my_store")}catch(error){return storeAccessErrorView(error)}
  if(!site)return createStoreView(session.user);
  if(new URLSearchParams(location.search).get("billing_return")==="1"){
   try{await billingCall("subscription_refresh",site.id)}catch(e){console.warn("subscription_refresh",e)}
-  site=await rpc("simple_my_store");
+  try{site=await rpc("simple_my_store")}catch(error){return storeAccessErrorView(error)}
  }
  return dashboard(site);
+}
+function storeAccessErrorView(error){
+ const denied=/SITE_ACCESS_DENIED|ACCESS_DENIED|AUTH_REQUIRED|JWT|session.*expired/i.test(String(error?.message||error));
+ console.warn("simple_store_access",error?.code||"unavailable");
+ app.innerHTML=`<div class="shell">${nav()}<main class="auth-wrap card"><h1>No pudimos abrir tu tienda</h1><p>${denied?"Tu sesión no tiene acceso a esta tienda. Salí y volvé a ingresar con la cuenta del comercio.":"No pudimos consultar tu tienda. Revisá la conexión y volvé a intentar."}</p><button id="store-access-retry" class="btn brand" type="button">Volver a intentar</button><button id="store-access-logout" class="btn" type="button">Salir de esta cuenta</button></main></div>`;
+ document.getElementById("store-access-retry").onclick=()=>location.reload();
+ document.getElementById("store-access-logout").onclick=logout;
 }
 function createStoreView(user){
  app.innerHTML=`<div class="app-shell"><header class="app-head"><div class="inner"><span class="brand">M COMMERCE <small>SIMPLE</small></span><button id="logout" class="mini">Salir</button></div></header><main class="app-main"><section class="card wizard"><div class="eyebrow">Primera configuración</div><h1>Creá tu tienda</h1><p class="muted">Después vas a cargar la información, primera categoría y primer producto.</p><form id="create-store">${field("store_name","Nombre del comercio","text","","required maxlength=\"100\"")}${field("store_slug","Enlace deseado","text","","required minlength=\"3\" maxlength=\"60\" pattern=\"[a-z0-9-]+\"")}<p class="hint">Tu enlace será: ${esc(window.M_COMMERCE_OFFICIAL_ORIGIN)}/tienda/<strong id="slug-preview">mitienda</strong></p><button class="btn brand" type="submit">Crear mi tienda</button></form></section></main></div>`;
@@ -372,7 +379,7 @@ function createStoreView(user){
 }
 const slugify=v=>String(v||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
 async function dashboard(site){
- let data;try{data=await rpc("simple_dashboard",{p_site_id:site.id})}catch(e){return fail(e)}
+ let data;try{data=await rpc("simple_dashboard",{p_site_id:site.id})}catch(e){return storeAccessErrorView(e)}
  const sub=data.subscription||{};
  if(!["trial","active"].includes(String(sub.status||data.site.subscription_status||"")))return subscriptionGate(data.site,sub);
  if(!data.site.simple_onboarding_completed_at&&Number(data.settings.simple_onboarding_step||1)<=10)return wizard(site.id,Number(data.settings.simple_onboarding_step||1),data);

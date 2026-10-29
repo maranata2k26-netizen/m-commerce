@@ -1,0 +1,13 @@
+# Verificación del 29 de octubre
+
+Pasaron nuevamente las cinco suites SQL de staging: 92 comprobaciones integrales, seguridad Simple, privilegios internos, 22 denegaciones administrativas entre comercios y 15 contratos de pagos PRO. Todos los fixtures SQL transaccionales se revierten. El código inicial pasó 149 pruebas Node; tras corregir la recuperación de acceso pasan 152.
+
+El navegador reprodujo una sesión que obtenía simple_my_store pero recibía SITE_ACCESS_DENIED en simple_dashboard. La pantalla quedaba en Cargando M Commerce con un aviso efímero y sin salida. Ahora los errores al consultar tienda o dashboard muestran una pantalla permanente con reintento y cierre de sesión. Un fallo de simple_my_store ya no se interpreta como una cuenta nueva sin tienda. No se modifica autorización ni se concede acceso.
+
+Las tres pruebas nuevas verifican error de lookup sin creación de tienda, denegación de dashboard y acciones de recuperación para permisos/conexión. Se actualizó la versión del script para evitar conservar el cliente anterior en caché.
+
+El recorrido histórico PRO no pudo completarse: /comercio en staging redirige por diseño a /simple. bootstrap.html impide entrar en el runtime dependiente de producción; /config.js y /platform.js siguen procediendo del runtime productivo. No se eludió esa protección ni se enviaron pedidos QA a producción. Hace falta un runtime PRO aislado para la prueba de navegador; las 15 pruebas SQL no la sustituyen.
+
+La restauración nativa aislada del dump se intentó en PostgreSQL 17.11 local, limitado a 127.0.0.1:55439, con contraseña aleatoria temporal. Primero se corrigió un bloqueo de captura de salida del proceso local. El segundo intento creó el servidor y la base, pero falló al restaurar los roles: permission denied to grant privileges as role supabase_admin; el grantor no tiene ADMIN sobre anon en el entorno vacío. Se detuvo el servidor y se conservó el log privado. La restauración NO queda aprobada. Además, el PostgreSQL portable carece de http, pg_cron, pg_net y supabase_vault. No se modificó el dump para ocultar incompatibilidades ni se restauró sobre Supabase.
+
+El respaldo de base, roles sin contraseñas, 267 objetos Storage y fuentes de 90 funciones permanece privado y fuera del repositorio. No incluye secretos/configuración de servicios gestionados ni una segunda copia externa. La configuración y publicación productivas siguen sin ejecutar.
