@@ -5,7 +5,7 @@
 (()=>{
  if(location.hostname!=="m-commerce-staging.vercel.app"){location.replace("/simple");return;}
  const view=location.pathname.replace(/^\/qa-pro\/?/,"").replace(/\.html$/,"")||"comercio";
- const allowed=new Set(["comercio","master","auth","diseno","vendedor","index","reset-j3"]);
+ const allowed=new Set(["comercio","master","auth","diseno","vendedor","index","reset-j3","seguimiento"]);
  const status=document.getElementById("qa-status"),retry=document.getElementById("qa-retry");
  if(!allowed.has(view)){status.textContent="Página de prueba no disponible.";return;}
  async function load(){

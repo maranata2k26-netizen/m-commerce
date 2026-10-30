@@ -1,7 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2.117.2";
 const STAGE="https://jcgvunffeskkbgsbomgy.supabase.co";
-const ALLOWED=new Set(["config.js","platform.js","platform.css","comercio.html","master.html","auth.html","diseno.html","vendedor.html","index.html","reset-j3.html"]);
+const ALLOWED=new Set(["config.js","platform.js","platform.css","comercio.html","master.html","auth.html","diseno.html","vendedor.html","index.html","reset-j3.html","seguimiento.html"]);
 const headers={"access-control-allow-origin":"https://m-commerce-staging.vercel.app","access-control-allow-headers":"apikey,authorization,content-type","cache-control":"no-store","x-content-type-options":"nosniff"};
 const respond=(body:string,status=200,type="application/json")=>new Response(status===204?null:body,{status,headers:{...headers,"content-type":type}});
 Deno.serve(async req=>{

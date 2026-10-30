@@ -21,7 +21,8 @@ BEGIN
   FOREACH signature IN ARRAY ARRAY[
     'public.platform_order_growth_trigger()',
     'public.platform_prevent_master_membership()',
-    'public.platform_prevent_member_promotion()'
+    'public.platform_prevent_member_promotion()',
+    'public.simple_order_category_guard()'
   ] LOOP
     fn := to_regprocedure(signature);
     IF fn IS NULL OR has_function_privilege('anon',fn,'EXECUTE')

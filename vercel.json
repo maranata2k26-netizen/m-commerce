@@ -23,6 +23,14 @@
       "destination": "/qa-pro-bootstrap.html"
     },
     {
+      "source": "/seguimiento",
+      "destination": "/bootstrap.html"
+    },
+    {
+      "source": "/seguimiento.html",
+      "destination": "/bootstrap.html"
+    },
+    {
       "source": "/simple",
       "destination": "/simple/index.html"
     },
