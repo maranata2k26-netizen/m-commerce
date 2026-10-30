@@ -1,0 +1,65 @@
+name: Validate M Commerce staging payments
+on:
+  push:
+    branches:
+      - improvement/staging-billing-complete-20261010
+    paths:
+      - '.github/workflows/validate-staging-payments.yml'
+      - 'scripts/billing-contract.test.cjs'
+      - 'scripts/frontend-environment.test.cjs'
+      - 'supabase/functions/**'
+      - 'simple/**'
+      - 'scripts/frontend-environment.test.cjs'
+  pull_request:
+    paths:
+      - '.github/workflows/validate-staging-payments.yml'
+      - 'scripts/billing-contract.test.cjs'
+      - 'supabase/functions/**'
+jobs:
+  payment-contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Check billing integration contracts (no secrets or external payments)
+        run: node --test scripts/billing-contract.test.cjs scripts/frontend-environment.test.cjs
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Typecheck all staging Edge Functions
+        run: |
+          set -euo pipefail
+          for function in \
+            j3-billing j3-billing-account j3-billing-webhook \
+            checkout-create mercadopago-connect mercadopago-webhook \
+            platform-admin simple-checkout simple-pro-lead simple-consumer-request
+          do
+            deno check "supabase/functions/$function/index.ts"
+          done
+      - name: Smoke-test staging payment guards (no secrets, no payments)
+        run: |
+          set -euo pipefail
+          base="https://jcgvunffeskkbgsbomgy.supabase.co/functions/v1"
+          status=$(curl --max-time 15 -sS -o /tmp/mc-account-status.json -w '%{http_code}' \
+            -X POST -H 'content-type: application/json' -H 'Origin: https://m-commerce-staging.vercel.app' \
+            -d '{"action":"account_status"}' "$base/j3-billing-account")
+          test "$status" = "401" || { echo "Unauthenticated billing account endpoint: $status"; exit 1; }
+          status=$(curl --max-time 15 -sS -o /tmp/mc-checkout-status.json -w '%{http_code}' \
+            -X POST -H 'content-type: application/json' -H 'Origin: https://m-commerce-staging.vercel.app' \
+            -d '{"checkout_attempt_id":"11111111-1111-4111-8111-111111111111"}' "$base/checkout-create")
+          test "$status" = "422" || { echo "Missing site id checkout: $status"; exit 1; }
+          grep -q 'INVALID_SITE' /tmp/mc-checkout-status.json
+          status=$(curl --max-time 15 -sS -o /tmp/mc-hook-status.json -w '%{http_code}' \
+            -X POST -H 'content-type: application/json' \
+            -d '{"type":"payment","data":{"id":"123456789012"}}' "$base/j3-billing-webhook")
+          case "$status" in 401|503) echo "Unsigned billing webhook rejected ($status)";; *) echo "Unsigned billing webhook not rejected: $status"; exit 1;; esac
+      - name: Check existing Simple browser JS
+        run: |
+          for script in simple/*.js; do node --check "$script"; done

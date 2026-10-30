@@ -32,3 +32,31 @@
 @media(max-width:640px){.upload-grid,.stock-editor{grid-template-columns:1fr}.stock-editor>label{padding-bottom:0}}
 
 .social-proof{padding:8px 0 82px}.testimonial-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}.testimonial-card{background:#fff;border:1px solid #e3e8f0;border-radius:22px;padding:24px;box-shadow:0 14px 38px rgba(21,52,108,.06);transition:transform .18s ease,box-shadow .18s ease}.testimonial-card:hover{transform:translateY(-3px);box-shadow:0 18px 42px rgba(21,52,108,.09)}.testimonial-label{display:inline-flex;padding:6px 9px;border-radius:99px;background:#eef4ff;color:#1768ff;font-size:10px;font-weight:850;text-transform:uppercase;letter-spacing:.08em}.testimonial-card p{margin:18px 0 20px;font-size:16px;line-height:1.55;color:#27364d;font-weight:650}.testimonial-card strong{font-size:12px;color:#6b7890}@media(max-width:640px){.social-proof{padding:0 0 55px}.testimonial-grid{grid-template-columns:1fr}.testimonial-card{padding:20px}}
+
+/* Item 8: responsive admin-only overview; isolated from public storefront. */
+.admin-master-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:12px 0 24px}
+.admin-master-stat{padding:16px}.admin-master-stat strong{display:block;font-size:26px;margin-top:5px}
+.admin-master-controls{display:grid;grid-template-columns:minmax(220px,2fr) minmax(190px,1fr);gap:12px;margin:8px 0 16px}
+.admin-master-controls .field{margin:0}.admin-master-controls input,.admin-master-controls select{width:100%}
+.admin-master-store{align-items:center}.admin-master-store .row-main{min-width:0}.admin-master-store .row-sub{overflow-wrap:anywhere}
+.admin-master-store .admin-state{flex-shrink:0}
+@media(max-width:850px){.admin-master-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:540px){.admin-master-controls{grid-template-columns:1fr}.admin-master-store{display:grid;gap:12px}.admin-master-store .admin-state{width:100%}}
+
+/* Item 9: transparent storefront delivery quote and merchant delivery panel. */
+.mc-checkout-totals{padding:13px;border:1px solid var(--line,#dfe4ec);border-radius:12px;background:#f8fafc;display:grid;gap:5px;margin:10px 0}
+.mc-checkout-totals h2{margin:6px 0 0;font-size:1.1rem}
+.mc-checkout-totals .hint{margin:0;color:#667085;font-size:12px}
+#simple-delivery-settings .field{margin-top:14px}
+#simple-delivery-settings .field input[type=checkbox]{width:auto;min-width:18px;height:18px;vertical-align:middle}
+#simple-delivery-settings .field textarea{width:100%;max-width:100%;box-sizing:border-box}
+
+/* Item 10: merchant notifications. No email or push delivery is claimed by this UI. */
+.simple-notifications-tools{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.simple-notification{border-left:3px solid transparent;display:grid;gap:7px}
+.simple-notification.is-unread{border-left-color:#536ee8}
+.simple-notification.is-read{opacity:.82}
+.simple-notification p{margin:4px 0 8px;overflow-wrap:anywhere}
+.simple-notification-actions{display:flex;gap:10px;flex-wrap:wrap}
+.simple-notification .row-title{overflow-wrap:anywhere}
+@media(max-width:650px){.simple-notifications-tools{width:100%;justify-content:space-between}}

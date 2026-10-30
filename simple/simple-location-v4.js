@@ -1,8 +1,8 @@
 (()=>{
   "use strict";
 
-  const PROJECT_URL="https://kjoixhzaxopdbmudzfsg.supabase.co";
-  const API_KEY="sb_publishable_G9dKTg3ev1183qjfVkqMXg_kp5WDPaq";
+  const PROJECT_URL=window.M_COMMERCE_SUPABASE_URL;
+  const API_KEY=window.M_COMMERCE_SUPABASE_KEY;
   const LOCATION_URL=PROJECT_URL+"/functions/v1/m-commerce-location";
   let rpcHooked=false;
   let fetchHooked=false;
@@ -48,8 +48,9 @@
 
   function normalize(loc,source="map"){
     if(!loc)return null;
+    if(loc.lat==null||loc.lng==null||loc.lat===""||loc.lng==="")return null;
     const lat=Number(loc.lat),lng=Number(loc.lng);
-    if(!Number.isFinite(lat)||!Number.isFinite(lng))return null;
+    if(!Number.isFinite(lat)||!Number.isFinite(lng)||lat< -90||lat>90||lng< -180||lng>180)return null;
     return {lat,lng,formatted:String(loc.formatted||"").trim(),place_id:String(loc.place_id||""),source};
   }
 
@@ -79,6 +80,7 @@
     let state=normalize(initial,initial?.source||"saved");
     let timer=null;
     let suppress=false;
+    let requestSeq=0;
 
     const box=document.createElement("div");
     box.className="mc-location-box";
@@ -110,18 +112,22 @@
       selected.classList.add("show");
       selectedText.textContent=state.formatted||`${state.lat.toFixed(6)}, ${state.lng.toFixed(6)}`;
       map.classList.add("show");
+      mapImg.onerror=()=>map.classList.remove("show");
       mapImg.src=staticMapSrc(state);
       const link=document.createElement("a");link.className="mini mc-open-maps";link.target="_blank";link.rel="noopener";link.href=mapsLink(state);link.textContent="Ver en Google Maps";box.querySelector(".mc-location-actions").appendChild(link);
     };
     const choose=loc=>{
       state=normalize(loc,loc?.source||"search");
       if(!state)return;
+      requestSeq++;
+      clearTimeout(timer);
       suppress=true;input.value=state.formatted||input.value;suppress=false;
       results.innerHTML="";status.textContent="Ubicación exacta guardada.";renderState();
     };
 
     input.addEventListener("input",()=>{
       if(suppress)return;
+      const seq=++requestSeq;
       state=null;syncGlobal();selected.classList.remove("show");map.classList.remove("show");status.textContent="";
       clearTimeout(timer);
       const text=input.value.trim();
@@ -130,11 +136,12 @@
         try{
           status.textContent="Buscando dirección…";
           const out=await api("search",{q:text});
+          if(seq!==requestSeq||!input.isConnected)return;
           const rows=Array.isArray(out.results)?out.results:[];
           results.innerHTML=rows.map((row,i)=>`<button type="button" class="mc-location-result" data-i="${i}"><strong>${esc(row.formatted||"Dirección")}</strong><small>${esc([row.city,row.postcode].filter(Boolean).join(" · "))}</small></button>`).join("")||'<div class="hint">No encontramos coincidencias. Probá escribiendo calle, número y localidad.</div>';
           results.querySelectorAll(".mc-location-result").forEach(btn=>btn.onclick=()=>choose({...rows[Number(btn.dataset.i)],source:"search"}));
           status.textContent=rows.length?"Elegí una dirección de la lista.":"";
-        }catch(error){results.innerHTML="";status.textContent=error?.message||"No pudimos buscar la dirección.";}
+        }catch(error){if(seq!==requestSeq||!input.isConnected)return;results.innerHTML="";status.textContent="El mapa no está disponible. Podés ingresar tu dirección manualmente; el comercio deberá confirmar la cobertura.";}
       },450);
     });
 
@@ -156,7 +163,7 @@
   function ownerInitial(){
     const st=dash()?.settings||{};
     const lat=Number(st.business_latitude),lng=Number(st.business_longitude);
-    if(!Number.isFinite(lat)||!Number.isFinite(lng))return null;
+    if(st.business_latitude==null||st.business_longitude==null||!Number.isFinite(lat)||!Number.isFinite(lng))return null;
     return {lat,lng,formatted:st.business_address_formatted||st.address||"",place_id:st.business_place_id||"",source:"saved"};
   }
 
@@ -222,9 +229,14 @@
       const method=form.querySelector("#delivery_method");
       if(method?.value!=="delivery")return;
       if(!window.__mcDeliveryLocation){
-        event.preventDefault();event.stopImmediatePropagation();
-        toast("Elegí una dirección de la lista o usá tu ubicación actual para confirmar el delivery.",true);
-        form.querySelector("#delivery_address")?.focus();
+        const manual=String(form.querySelector("#delivery_address")?.value||"").trim();
+        if(manual.length<5){
+          event.preventDefault();event.stopImmediatePropagation();
+          toast("Ingresá una dirección de al menos 5 caracteres para el delivery.",true);
+          form.querySelector("#delivery_address")?.focus();
+        }
+        // Maps may be unconfigured or offline. Backend accepts a manual address;
+        // never fabricate coordinates or force GPS for checkout.
       }
     },true);
   }
@@ -238,7 +250,8 @@
         if(url.includes("/functions/v1/simple-checkout")&&String(init?.method||"GET").toUpperCase()==="POST"&&typeof init.body==="string"){
           const body=JSON.parse(init.body);
           if(body.delivery_method==="delivery"){
-            const loc=window.__mcDeliveryLocation;
+            const loc=normalize(window.__mcDeliveryLocation);
+            body.delivery_address_source=loc?(loc.source==="google"?"google":"manual_map"):"manual";
             if(loc){
               body.delivery_latitude=loc.lat;body.delivery_longitude=loc.lng;body.delivery_place_id=loc.place_id||null;body.delivery_address_formatted=loc.formatted||body.delivery_address;body.delivery_address_source=loc.source||"map";
               if(loc.formatted)body.delivery_address=loc.formatted;
@@ -262,14 +275,16 @@
     orderEnhanceBusy=true;
     try{
       const ids=pending.map(s=>s.dataset.id).filter(Boolean);
-      const {data,error}=await c.from("orders").select("id,delivery_method,delivery_address,delivery_address_formatted,delivery_latitude,delivery_longitude,delivery_unit,delivery_instructions").in("id",ids);
+      const activeSiteId=dash()?.site?.id;
+      if(!activeSiteId)return;
+      const {data,error}=await c.from("orders").select("id,delivery_method,delivery_address,delivery_address_formatted,delivery_latitude,delivery_longitude,delivery_unit,delivery_instructions").eq("site_id",activeSiteId).in("id",ids);
       if(error)throw error;
       const map=new Map((data||[]).map(row=>[row.id,row]));
       pending.forEach(status=>{
         const row=map.get(status.dataset.id),host=status.closest(".row")?.querySelector(".row-main");
         if(!row||!host||row.delivery_method!=="delivery")return;
         const box=document.createElement("div");box.className="mc-order-location";
-        const lat=Number(row.delivery_latitude),lng=Number(row.delivery_longitude),has=Number.isFinite(lat)&&Number.isFinite(lng);
+        const lat=Number(row.delivery_latitude),lng=Number(row.delivery_longitude),has=row.delivery_latitude!=null&&row.delivery_longitude!=null&&Number.isFinite(lat)&&Number.isFinite(lng);
         const address=row.delivery_address_formatted||row.delivery_address||"Dirección no informada";
         box.innerHTML=`📍 <strong>${esc(address)}</strong>${row.delivery_unit?` · ${esc(row.delivery_unit)}`:""}${row.delivery_instructions?`<br>${esc(row.delivery_instructions)}`:""}${has?`<br><a target="_blank" rel="noopener" href="${mapsLink({lat,lng})}">Abrir ubicación exacta</a>`:""}`;
         host.appendChild(box);
@@ -288,7 +303,7 @@
       const {data,error}=await c.rpc(preview?"simple_preview_storefront":"simple_public_storefront",{p_slug:slug});
       if(error||!data)return;
       const st=data.settings||{},lat=Number(st.business_latitude),lng=Number(st.business_longitude);
-      if(!Number.isFinite(lat)||!Number.isFinite(lng))return;
+      if(st.business_latitude==null||st.business_longitude==null||!Number.isFinite(lat)||!Number.isFinite(lng))return;
       const info=document.querySelector(".store-info>div:last-child");if(!info||info.querySelector(".mc-store-map-link"))return;
       const link=document.createElement("a");link.className="mc-store-map-link";link.target="_blank";link.rel="noopener";link.href=mapsLink({lat,lng});link.textContent="📍 Cómo llegar";info.appendChild(link);
     }catch(error){console.warn("mc_store_location",error);}

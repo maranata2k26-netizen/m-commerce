@@ -1,8 +1,8 @@
 (()=>{
   "use strict";
 
-  const PROJECT_URL="https://kjoixhzaxopdbmudzfsg.supabase.co";
-  const API_KEY="sb_publishable_G9dKTg3ev1183qjfVkqMXg_kp5WDPaq";
+  const PROJECT_URL=window.M_COMMERCE_SUPABASE_URL;
+  const API_KEY=window.M_COMMERCE_SUPABASE_KEY;
   const OFFICIAL_ORIGIN=String(window.M_COMMERCE_OFFICIAL_ORIGIN||"https://m-commerce-ar.vercel.app").replace(/\/+$/,"");
   const q=new URLSearchParams(location.search);
   const PREVIEW=q.get("preview")==="1";

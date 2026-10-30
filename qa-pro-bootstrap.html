@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>M Commerce PRO · QA</title></head>
+<body><main><h1>M Commerce PRO · Entorno de prueba</h1><p id="qa-status">Cargando el panel de prueba…</p><button id="qa-retry" hidden>Reintentar</button></main>
+<script>
+(()=>{
+ if(location.hostname!=="m-commerce-staging.vercel.app"){location.replace("/simple");return;}
+ const view=location.pathname.replace(/^\/qa-pro\/?/,"").replace(/\.html$/,"")||"comercio";
+ const allowed=new Set(["comercio","master","auth","diseno","vendedor","index","reset-j3","seguimiento"]);
+ const status=document.getElementById("qa-status"),retry=document.getElementById("qa-retry");
+ if(!allowed.has(view)){status.textContent="Página de prueba no disponible.";return;}
+ async function load(){
+  retry.hidden=true;
+  try{
+   const response=await fetch("https://jcgvunffeskkbgsbomgy.supabase.co/functions/v1/qa-pro-runtime?path="+encodeURIComponent(view+".html"),{headers:{apikey:"sb_publishable_5TX-YZ5p7yiZHZDAjQSGXg_c29FCBQ8"},cache:"no-store",signal:AbortSignal.timeout(20000)});
+   if(!response.ok)throw Error("QA_RUNTIME_HTTP_"+response.status);
+   const html=await response.text();if(!/<html[\s>]/i.test(html)||html.includes("kjoixhzaxopdbmudzfsg"))throw Error("QA_RUNTIME_NOT_ISOLATED");
+   document.open();document.write(html);document.close();
+  }catch(error){console.warn("qa_pro_load",error.message);status.textContent="No pudimos cargar el entorno de prueba PRO.";retry.hidden=false;}
+ }
+ retry.onclick=load;load();
+})();
+</script></body></html>

@@ -1,5 +1,4 @@
-import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { createClient } from "jsr:@supabase/supabase-js@2";
+import { createClient } from "npm:@supabase/supabase-js@2.117.2";
 
 const SUPABASE_URL=Deno.env.get("SUPABASE_URL")??"";
 const SERVICE=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")??"";
@@ -9,6 +8,9 @@ const PUBLIC_ORIGINS=new Set([
   "http://localhost:3000",
   "http://127.0.0.1:3000"
 ]);
+const configuredOrigin=Deno.env.get("M_COMMERCE_PUBLIC_ORIGIN")?.replace(/\/+$/,"");
+if(configuredOrigin)PUBLIC_ORIGINS.add(configuredOrigin);
+if(SUPABASE_URL.replace(/\/+$/,'')==='https://jcgvunffeskkbgsbomgy.supabase.co')PUBLIC_ORIGINS.add('https://m-commerce-staging.vercel.app');
 function headers(req:Request){
   const origin=req.headers.get("origin")||"https://mcommerce.vercel.app";
   return {"access-control-allow-origin":origin,"access-control-allow-headers":"authorization,apikey,content-type","access-control-allow-methods":"POST,OPTIONS","vary":"origin","cache-control":"no-store"};
@@ -18,6 +20,15 @@ const uuid=(v:unknown)=>/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f
 const cut=(v:unknown,n:number)=>String(v??"").trim().slice(0,n);
 function coord(v:unknown,min:number,max:number){if(v===null||v===undefined||v==="")return null;const n=Number(v);if(!Number.isFinite(n)||n<min||n>max)throw new Error("INVALID_DELIVERY_COORDINATES");return n}
 async function sha(value:string){const bytes=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(value));return [...new Uint8Array(bytes)].map(x=>x.toString(16).padStart(2,"0")).join("")}
+function merchantWhatsAppNumber(value:unknown){
+  const digits=String(value??"").replace(/\D/g,"");
+  // Simple is offered in Argentina: normalize ordinary local cellphone numbers.
+  if(/^549\d{10}$/.test(digits))return digits;
+  if(/^54\d{10}$/.test(digits))return "549"+digits.slice(2);
+  if(/^0\d{10}$/.test(digits))return "549"+digits.slice(1);
+  if(/^\d{10}$/.test(digits))return "549"+digits;
+  return /^\d{8,15}$/.test(digits)?digits:"";
+}
 function waMessage(order:any,items:any[],body:any){
   const lat=coord(body?.delivery_latitude,-90,90),lng=coord(body?.delivery_longitude,-180,180);
   const mapUrl=lat!==null&&lng!==null?`https://www.google.com/maps?q=${lat},${lng}`:"";
@@ -58,28 +69,34 @@ Deno.serve(async(req:Request)=>{
       const host=new URL(origin).hostname.toLowerCase();
       if(!PUBLIC_ORIGINS.has(new URL(origin).origin)&&host!==custom.toLowerCase())return json(req,{error:"ORIGIN_NOT_ALLOWED"},403);
     }
-    const {data:settings,error:settingsError}=await admin.from("settings").select("whatsapp_number,payment_methods").eq("site_id",siteId).single();
+    const {data:settings,error:settingsError}=await admin.from("settings").select("whatsapp_number,payment_methods,fulfillment_config").eq("site_id",siteId).single();
     if(settingsError)throw settingsError;
     if(settings.payment_methods?.[method]!==true)return json(req,{error:"PAYMENT_METHOD_DISABLED",message:"Esa forma de pago no está habilitada."},409);
+    const requestedDelivery=String(body?.delivery_method||"");
+    if(!["pickup","delivery"].includes(requestedDelivery))return json(req,{error:"INVALID_DELIVERY_METHOD",message:"Elegí una forma de entrega válida."},422);
+    const fulfillment=settings.fulfillment_config||{};
+    if((requestedDelivery==="pickup"&&fulfillment.pickup_enabled===false)||(requestedDelivery==="delivery"&&fulfillment.shipping_enabled!==true))return json(req,{error:"DELIVERY_METHOD_DISABLED",message:"El comercio no ofrece esa forma de entrega."},409);
     if(method==="mercadopago"){
-      const forwarded=await fetch(SUPABASE_URL+"/functions/v1/checkout-create",{method:"POST",headers:{"content-type":"application/json","apikey":SERVICE,"authorization":"Bearer "+SERVICE,...(origin?{"origin":origin}:{})},body:JSON.stringify(body)});
+      const forwarded=await fetch(SUPABASE_URL+"/functions/v1/checkout-create",{method:"POST",headers:{"content-type":"application/json","apikey":SERVICE,"authorization":"Bearer "+SERVICE,...(origin?{"origin":origin}:{})},body:JSON.stringify({...body,delivery_address_source:requestedDelivery==="delivery"?(body.delivery_address_source==="google"?"google":body.delivery_latitude!=null&&body.delivery_longitude!=null?"manual_map":"manual"):null,order_source:"simple"})});
       return new Response(await forwarded.text(),{status:forwarded.status,headers:{...headers(req),"content-type":"application/json; charset=utf-8"}});
     }
-    const customerName=cut(body?.customer_name,120),phone=cut(body?.customer_phone,40),address=cut(body?.delivery_address,500),delivery=body?.delivery_method==="delivery"?"delivery":"pickup";
+    const customerName=cut(body?.customer_name,120),phone=cut(body?.customer_phone,40),address=cut(body?.delivery_address,500),delivery=requestedDelivery;
     const lat=delivery==="delivery"?coord(body?.delivery_latitude,-90,90):null;
     const lng=delivery==="delivery"?coord(body?.delivery_longitude,-180,180):null;
     if((lat===null)!==(lng===null))return json(req,{error:"INVALID_DELIVERY_COORDINATES",message:"La ubicación exacta está incompleta."},422);
     const place=delivery==="delivery"?cut(body?.delivery_place_id,240):"";
     const formatted=delivery==="delivery"?cut(body?.delivery_address_formatted,500):"";
-    const source=delivery==="delivery"?cut(body?.delivery_address_source,30):"";
+    const source=delivery==="delivery"?(lat===null?"manual":body?.delivery_address_source==="google"?"google":"manual_map"):"";
     const unit=delivery==="delivery"?cut(body?.delivery_unit,120):"";
     const instructions=delivery==="delivery"?cut(body?.delivery_instructions,500):"";
     const phoneDigits=phone.replace(/\D/g,"");
     if(customerName.length<2)return json(req,{error:"INVALID_CUSTOMER_NAME",message:"Ingresá un nombre válido."},422);
     if(phoneDigits.length<8||phoneDigits.length>15)return json(req,{error:"INVALID_CUSTOMER_PHONE",message:"Ingresá un teléfono válido."},422);
     if(delivery==="delivery"&&address.length<5)return json(req,{error:"DELIVERY_ADDRESS_REQUIRED",message:"Ingresá la dirección de entrega."},422);
+    if(Array.isArray(body?.items)&&body.items.length>40)return json(req,{error:"TOO_MANY_ITEMS",message:"El pedido puede incluir hasta 40 productos o variantes diferentes."},422);
     const items=Array.isArray(body?.items)?body.items.slice(0,40).map((x:any)=>({product_id:String(x?.product_id||""),quantity:Number(x?.quantity||0),extra_ids:[],removed_ingredient_ids:[],note:"",variant_id:x?.variant_id?String(x.variant_id):null})):[];
     if(!items.length)return json(req,{error:"INVALID_ITEMS",message:"El carrito está vacío."},422);
+    if(items.some((x:any)=>!uuid(x.product_id)||!Number.isInteger(x.quantity)||x.quantity<1||x.quantity>100||(x.variant_id!==null&&!uuid(x.variant_id))))return json(req,{error:"INVALID_ITEMS",message:"Revisá los productos y las cantidades antes de confirmar."},422);
     const ip=(req.headers.get("x-forwarded-for")??"unknown").split(",")[0].trim();
     const {data:allowed,error:rateError}=await admin.rpc("checkout_rate_limit_v19",{p_key_hash:await sha(`${ip}|${siteId}|simple-checkout`),p_limit:30});
     if(rateError)throw rateError;if(!allowed)return json(req,{error:"TOO_MANY_REQUESTS",message:"Esperá un minuto antes de volver a intentar."},429);
@@ -89,20 +106,20 @@ Deno.serve(async(req:Request)=>{
       p_payment_method:method,p_site_id:siteId,p_items:items,p_checkout_attempt_id:attempt
     });
     if(createError)throw createError;
-    if(delivery==="delivery"){
+    if(delivery==="delivery"&&!order.idempotent_replay){
       const exactUpdate=await admin.from("orders").update({
         delivery_latitude:lat,delivery_longitude:lng,
         delivery_place_id:place||null,delivery_address_formatted:formatted||address||null,
-        delivery_address_source:source||(lat!==null?"geoapify":"manual"),
+        delivery_address_source:source,
         delivery_unit:unit||null,delivery_instructions:instructions||null
       }).eq("id",order.id).eq("site_id",siteId);
       if(exactUpdate.error)throw exactUpdate.error;
     }
     const {data:orderItems,error:itemError}=await admin.from("order_items").select("product_name,variant_name,quantity,line_total").eq("order_id",order.id).eq("site_id",siteId).order("id");
     if(itemError)throw itemError;
-    const businessPhone=String(settings.whatsapp_number||"").replace(/\D/g,"");
+    const businessPhone=merchantWhatsAppNumber(settings.whatsapp_number);
     const message=waMessage(order,orderItems||[],{...body,payment_method:method,delivery_latitude:lat,delivery_longitude:lng,delivery_address_formatted:formatted||address,delivery_place_id:place,delivery_unit:unit,delivery_instructions:instructions});
-    try{
+    if(!order.idempotent_replay)try{
       const pushResponse=await fetch(SUPABASE_URL+"/functions/v1/j3-push",{method:"POST",headers:{"content-type":"application/json","apikey":SERVICE,"authorization":"Bearer "+SERVICE},body:JSON.stringify({order_id:order.id})});
       if(!pushResponse.ok)console.warn("push_queue_status",pushResponse.status);
     }catch(e){console.warn("push_queue",e)}
@@ -111,7 +128,7 @@ Deno.serve(async(req:Request)=>{
   }catch(error){
     const raw=error instanceof Error?error.message:String(error);
     console.error(JSON.stringify({event:"simple_checkout_failed",error:raw.slice(0,300)}));
-    const map:any={product_not_available:"Uno de los productos ya no está disponible.",insufficient_stock:"No queda stock suficiente.",variant_required:"Elegí una variante.",orders_closed:"El comercio no está recibiendo pedidos.",invalid_delivery_coordinates:"La ubicación exacta no es válida."};
+    const map:any={checkout_attempt_conflict:"El pedido cambió durante el reintento. Volvé al carrito y confirmalo nuevamente.",product_not_available:"Uno de los productos ya no está disponible.",insufficient_stock:"No queda stock suficiente.",variant_required:"Elegí una variante.",orders_closed:"El comercio no está recibiendo pedidos.",invalid_delivery_coordinates:"La ubicación exacta no es válida."};
     const key=Object.keys(map).find(k=>raw.toLowerCase().includes(k));
     return json(req,{error:"CHECKOUT_FAILED",message:key?map[key]:"No se pudo registrar el pedido. Intentá nuevamente."},400);
   }

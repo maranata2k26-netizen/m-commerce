@@ -1,0 +1,23 @@
+const fs=require('fs'),path=require('path');
+if(!process.argv[3]||!process.argv[4])throw Error('Usage: node scripts/staging-rubric-access.cjs <rubric> <private-qa-actors.json> <output-directory>');
+const output=path.resolve(process.argv[4]);fs.mkdirSync(output,{recursive:true});
+const group=process.argv[2],site='36ec057b-0835-42c8-a35a-e5f6f2801f3e',missing='00000000-0000-4000-8000-000000000000';
+const base='https://jcgvunffeskkbgsbomgy.supabase.co',key='sb_publishable_5TX-YZ5p7yiZHZDAjQSGXg_c29FCBQ8',qa=JSON.parse(fs.readFileSync(process.argv[3]));
+const groups={
+ hardware:[['hardware_admin_catalog',{p_filters:{},p_limit:10,p_page:1}],['hardware_archive_product',{p_product_id:missing}],['hardware_category_admin_summary',{}],['hardware_confirm_transfer',{p_order_id:missing}],['hardware_delete_category',{p_category_id:missing}],['hardware_move_category',{p_category_id:missing,p_direction:'up'}],['hardware_order_bundle',{p_limit:10}],['hardware_publish_design',{}],['hardware_restore_product',{p_product_id:missing}],['hardware_save_brand',{p_brand:{name:'QA forbidden'}}],['hardware_save_category',{p_category:{name:'QA forbidden'}}],['hardware_save_design_draft',{p_design:{}}],['hardware_save_public_design',{p_design:{}}],['hardware_save_variant',{p_product_id:missing,p_variant:{}}],['hardware_update_order_status',{p_order_id:missing,p_status:'cancelled'}]],
+ butchery:[['butcher_adjust_stock',{p_product_id:missing,p_delta_grams:1,p_delta_units:1,p_reason:'QA forbidden'}],['butcher_cancel_order',{p_order_id:missing}],['butcher_get_editor_bundle',{}],['butcher_payment_quote',{p_order_id:missing,p_payment_kind:'full'}],['butcher_set_actual_weight',{p_order_item_id:missing,p_actual_weight_g:1000}],['butcher_update_order_status',{p_order_id:missing,p_status:'preparing'}],['butcher_upsert_product_settings',{p_product_id:missing,p_config:{}}],['butcher_upsert_shop_settings',{p_config:{}}]],
+ sports_courts:[['platform_sports_activity_sections',{}],['platform_sports_admin_courts',{}],['platform_sports_bookings',{p_date:'2026-10-29'}],['platform_sports_delete_activity_section',{p_section_id:missing}],['platform_sports_delete_court',{p_court_id:missing}],['platform_sports_move_activity_section',{p_section_id:missing,p_direction:'up'}],['platform_sports_move_court',{p_court_id:missing,p_direction:'up'}],['platform_sports_move_resource_to_activity',{p_resource_id:missing,p_activity_id:missing}],['platform_sports_save_activity_section',{p_section:{name:'QA forbidden',slug:'qa-forbidden'}}],['platform_sports_save_court_v178',{p_court:{name:'QA forbidden'}}],['platform_sports_update_booking_status',{p_reservation_id:missing,p_status:'cancelled'}]],
+ general:[['platform_set_accepting_orders',{p_open:false}]]
+};
+async function login(email){const r=await fetch(base+'/auth/v1/token?grant_type=password',{method:'POST',headers:{apikey:key,'content-type':'application/json'},body:JSON.stringify({email,password:qa.password})});const d=await r.json();if(!r.ok||!d.access_token)throw Error('QA authentication failed');return d.access_token;}
+async function rpc(token,name,args){const r=await fetch(base+'/rest/v1/rpc/'+name,{method:'POST',headers:{apikey:key,authorization:'Bearer '+token,'content-type':'application/json'},body:JSON.stringify({p_site_id:site,...args})});return{http:r.status,ok:r.ok,data:await r.json()};}
+(async()=>{
+ if(!groups[group])throw Error('Unknown group');
+ const actor=await login('qa-final-a@mc-stage.example.invalid'),owner=await login('qa-final-b@mc-stage.example.invalid');
+ const probe=group==='hardware'?'hardware_category_admin_summary':group==='butchery'?'butcher_get_editor_bundle':group==='sports_courts'?'platform_sports_admin_courts':'platform_subscription_state';
+ const allowed=await rpc(owner,probe,{});if(!allowed.ok||allowed.data===null)throw Error('Positive owner control failed '+group+' '+allowed.http);
+ const results=[];
+ for(const [name,args] of groups[group]){const r=await rpc(actor,name,args);const safeNull=name==='hardware_order_bundle'&&r.ok&&r.data===null;const denied=!r.ok&&/SITE_ACCESS_DENIED|ACCESS_DENIED|OWNER_REQUIRED|ADMIN_REQUIRED|NOT_SITE_MEMBER|SITE_MEMBER_REQUIRED/.test(r.data?.message||'');results.push({name,denied:denied||safeNull,http:r.http,code:denied?r.data.message:safeNull?'null-no-disclosure':'UNEXPECTED_RESULT'});}
+ const report={group,ownerPositiveControl:true,checked:results.length,passed:results.every(x=>x.denied),results};
+ fs.writeFileSync(path.join(output,'security-http-'+group+'-20261029.json'),JSON.stringify(report,null,2));console.log(JSON.stringify(report));if(!report.passed)process.exitCode=1;
+})().catch(e=>{console.error(e.message);process.exit(1)});

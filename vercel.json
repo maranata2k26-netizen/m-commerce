@@ -1,7 +1,9 @@
 {
   "cleanUrls": false,
   "trailingSlash": false,
-  "alias": ["mcommerce.vercel.app"],
+  "alias": [
+    "mcommerce.vercel.app"
+  ],
   "redirects": [
     {
       "source": "/:path*",
@@ -16,6 +18,18 @@
     }
   ],
   "rewrites": [
+    {
+      "source": "/qa-pro/:path*",
+      "destination": "/qa-pro-bootstrap.html"
+    },
+    {
+      "source": "/seguimiento",
+      "destination": "/bootstrap.html"
+    },
+    {
+      "source": "/seguimiento.html",
+      "destination": "/bootstrap.html"
+    },
     {
       "source": "/simple",
       "destination": "/simple/index.html"
@@ -147,6 +161,23 @@
   ],
   "headers": [
     {
+      "source": "/qa-pro/:path*",
+      "headers": [
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://jcgvunffeskkbgsbomgy.supabase.co; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://jcgvunffeskkbgsbomgy.supabase.co; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: https://jcgvunffeskkbgsbomgy.supabase.co https://http2.mlstatic.com https://commons.wikimedia.org; connect-src 'self' https://jcgvunffeskkbgsbomgy.supabase.co wss://jcgvunffeskkbgsbomgy.supabase.co https://api.geoapify.com https://maps.geoapify.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self' https://www.mercadopago.com.ar; manifest-src 'self' https://jcgvunffeskkbgsbomgy.supabase.co; worker-src 'none';"
+        },
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "no-store"
+        }
+      ]
+    },
+    {
       "source": "/bootstrap.html",
       "headers": [
         {
@@ -265,7 +296,7 @@
         },
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://kjoixhzaxopdbmudzfsg.supabase.co https://api.qrserver.com https://images.unsplash.com; connect-src 'self' https://kjoixhzaxopdbmudzfsg.supabase.co wss://kjoixhzaxopdbmudzfsg.supabase.co; frame-ancestors 'none'; base-uri 'self'; form-action 'self' https://www.mercadopago.com.ar;"
+          "value": "default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://kjoixhzaxopdbmudzfsg.supabase.co https://jcgvunffeskkbgsbomgy.supabase.co https://api.qrserver.com https://images.unsplash.com; connect-src 'self' https://kjoixhzaxopdbmudzfsg.supabase.co https://jcgvunffeskkbgsbomgy.supabase.co wss://kjoixhzaxopdbmudzfsg.supabase.co wss://jcgvunffeskkbgsbomgy.supabase.co; frame-ancestors 'none'; base-uri 'self'; form-action 'self' https://www.mercadopago.com.ar;"
         }
       ]
     },
@@ -286,7 +317,7 @@
         },
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://kjoixhzaxopdbmudzfsg.supabase.co https://api.qrserver.com https://images.unsplash.com; connect-src 'self' https://kjoixhzaxopdbmudzfsg.supabase.co wss://kjoixhzaxopdbmudzfsg.supabase.co; frame-ancestors 'none'; base-uri 'self'; form-action 'self' https://www.mercadopago.com.ar;"
+          "value": "default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://kjoixhzaxopdbmudzfsg.supabase.co https://jcgvunffeskkbgsbomgy.supabase.co https://api.qrserver.com https://images.unsplash.com; connect-src 'self' https://kjoixhzaxopdbmudzfsg.supabase.co https://jcgvunffeskkbgsbomgy.supabase.co wss://kjoixhzaxopdbmudzfsg.supabase.co wss://jcgvunffeskkbgsbomgy.supabase.co; frame-ancestors 'none'; base-uri 'self'; form-action 'self' https://www.mercadopago.com.ar;"
         }
       ]
     },
@@ -307,7 +338,7 @@
         },
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://kjoixhzaxopdbmudzfsg.supabase.co https://api.qrserver.com https://images.unsplash.com; connect-src 'self' https://kjoixhzaxopdbmudzfsg.supabase.co wss://kjoixhzaxopdbmudzfsg.supabase.co; frame-ancestors 'none'; base-uri 'self'; form-action 'self' https://www.mercadopago.com.ar;"
+          "value": "default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://kjoixhzaxopdbmudzfsg.supabase.co https://jcgvunffeskkbgsbomgy.supabase.co https://api.qrserver.com https://images.unsplash.com; connect-src 'self' https://kjoixhzaxopdbmudzfsg.supabase.co https://jcgvunffeskkbgsbomgy.supabase.co wss://kjoixhzaxopdbmudzfsg.supabase.co wss://jcgvunffeskkbgsbomgy.supabase.co; frame-ancestors 'none'; base-uri 'self'; form-action 'self' https://www.mercadopago.com.ar;"
         }
       ]
     }

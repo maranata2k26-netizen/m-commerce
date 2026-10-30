@@ -1,6 +1,6 @@
 (()=>{"use strict";
 const OFFICIAL_ORIGIN=String(window.M_COMMERCE_OFFICIAL_ORIGIN||"https://m-commerce-ar.vercel.app").replace(/\/+$/,"");
-const PROJECT_URL="https://kjoixhzaxopdbmudzfsg.supabase.co";
+const PROJECT_URL=window.M_COMMERCE_SUPABASE_URL;
 const PREVIEW=new URLSearchParams(location.search).get("preview")==="1";
 const DEVICE=new URLSearchParams(location.search).get("device")||"desktop";
 let client=null;
@@ -95,7 +95,7 @@ async function startBilling(siteId){
   if(!session)throw new Error("Tu sesión venció. Volvé a ingresar.");
   const res=await fetch(PROJECT_URL+"/functions/v1/j3-billing",{
     method:"POST",
-    headers:{"content-type":"application/json","apikey":"sb_publishable_G9dKTg3ev1183qjfVkqMXg_kp5WDPaq","authorization":"Bearer "+session.access_token},
+    headers:{"content-type":"application/json","apikey":window.M_COMMERCE_SUPABASE_KEY,"authorization":"Bearer "+session.access_token},
     body:JSON.stringify({action:"subscription_create",site_id:siteId,return_path:"/simple/app?billing_return=1&publish_after_billing=1"})
   });
   const out=await res.json();
@@ -142,16 +142,20 @@ function enhanceDashboard(dash){
   card.className="mc-owner-tools";
   const site=dash.site;
   const subStatus=String(dash.subscription?.status||site.subscription_status||"pending");
-  const published=site.status==="published";
+  const eligible=["trial","active","buyout"].includes(subStatus);
+  const published=site.status==="published"&&eligible&&!site.is_suspended;
+  const paused=site.status==="published"&&!published;
+  const statusBadge=host.querySelector(".welcome .status");
+  if(statusBadge){statusBadge.textContent=subStatus;statusBadge.classList.toggle("active",subStatus==="active");}
   const publicUrl=official("/tienda/"+encodeURIComponent(site.slug));
   card.innerHTML=`
     <div class="eyebrow">Estado de tu tienda</div>
-    <h2>${published?"Tu tienda está online":"Tu tienda está en borrador"}</h2>
-    <p class="muted">${published?"Los clientes ya pueden verla y comprar.":"Solo vos podés verla hasta tocar PUBLICAR MI TIENDA."} ${!["trial","active","buyout"].includes(subStatus)?"Al publicar te vamos a pedir activar el plan.":""}</p>
+    <h2>${published?"Tu tienda está online":paused?"Tu tienda está pausada":"Tu tienda está en borrador"}</h2>
+    <p class="muted">${published?"Los clientes ya pueden verla y comprar.":site.is_suspended?"La tienda está suspendida. Contactá al equipo de M Commerce para revisar su estado.":paused?"Los clientes no pueden comprar mientras el plan esté inactivo. Podés seguir editando y previsualizando tu tienda.":"Solo vos podés verla hasta tocar PUBLICAR MI TIENDA."} ${!eligible?"Para habilitar las ventas necesitás activar el plan.":""}</p>
     <div class="mc-owner-actions">
       <a class="btn secondary" target="_blank" rel="noopener" href="${publicUrl}?preview=1&device=mobile">Vista previa celular</a>
       <a class="btn secondary" target="_blank" rel="noopener" href="${publicUrl}?preview=1&device=desktop">Vista previa PC</a>
-      ${published?`<a class="btn brand" target="_blank" rel="noopener" href="${publicUrl}">ABRIR MI TIENDA</a><button class="btn secondary" type="button" id="mc-copy-link">COPIAR LINK</button><button class="btn secondary" type="button" id="mc-share-link">COMPARTIR</button>`:`<button class="btn brand" type="button" id="mc-publish">PUBLICAR MI TIENDA</button>`}
+      ${published?`<a class="btn brand" target="_blank" rel="noopener" href="${publicUrl}">ABRIR MI TIENDA</a><button class="btn secondary" type="button" id="mc-copy-link">COPIAR LINK</button><button class="btn secondary" type="button" id="mc-share-link">COMPARTIR</button>`:site.is_suspended?"":`<button class="btn brand" type="button" id="mc-publish">${paused?"REACTIVAR MI TIENDA":"PUBLICAR MI TIENDA"}</button>`}
     </div>`;
   const welcome=host.querySelector(".welcome");
   const stats=host.querySelector(".stats");
