@@ -90,13 +90,30 @@ function previewChrome(){
   document.body.prepend(bar);
 }
 
+async function requestBillingEmail(defaultEmail=''){
+  return new Promise(resolve=>{
+    const dialog=document.createElement('dialog');
+    dialog.className='card';dialog.style.maxWidth='440px';dialog.style.width='calc(100% - 32px)';
+    dialog.setAttribute('aria-labelledby','mc-billing-email-title');
+    dialog.innerHTML='<form><h2 id="mc-billing-email-title">Tu cuenta de Mercado Pago</h2><p>Usá el email con el que ingresás a Mercado Pago. Puede ser distinto del de M Commerce.</p><div class="field"><label for="mc-billing-email">Email de Mercado Pago</label><input id="mc-billing-email" type="email" required maxlength="254" autocomplete="email"></div><div class="hero-actions"><button type="submit" class="btn brand">Continuar</button><button type="button" class="btn secondary" data-cancel>Cancelar</button></div></form>';
+    const input=dialog.querySelector('input');input.value=defaultEmail;
+    dialog.querySelector('form').onsubmit=event=>{event.preventDefault();if(input.reportValidity())dialog.close(input.value.trim().toLowerCase());};
+    dialog.querySelector('[data-cancel]').onclick=()=>dialog.close();
+    dialog.onclose=()=>{const email=dialog.returnValue;dialog.remove();resolve(email||null);};
+    document.body.appendChild(dialog);dialog.showModal();input.focus();
+  });
+}
+window.mcRequestBillingEmail=requestBillingEmail;
+
 async function startBilling(siteId){
   const session=(await client.auth.getSession()).data.session;
   if(!session)throw new Error("Tu sesión venció. Volvé a ingresar.");
+  const payerEmail=await requestBillingEmail(session.user?.email||'');
+  if(!payerEmail)return;
   const res=await fetch(PROJECT_URL+"/functions/v1/j3-billing",{
     method:"POST",
     headers:{"content-type":"application/json","apikey":window.M_COMMERCE_SUPABASE_KEY,"authorization":"Bearer "+session.access_token},
-    body:JSON.stringify({action:"subscription_create",site_id:siteId,return_path:"/simple/app?billing_return=1&publish_after_billing=1"})
+    body:JSON.stringify({action:"subscription_create",site_id:siteId,payer_email:payerEmail,return_path:"/simple/app?billing_return=1&publish_after_billing=1"})
   });
   const out=await res.json();
   if(!res.ok)throw new Error(out.message||out.error||"No se pudo activar el plan.");

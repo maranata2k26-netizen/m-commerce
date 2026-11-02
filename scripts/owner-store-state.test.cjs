@@ -12,3 +12,12 @@ test('cancelled subscription never advertises the published store as available t
 test('active published store retains sharing and public-store access',()=>{const r=render('published','active');assert.match(r.html,/Tu tienda está online/);assert.match(r.html,/ABRIR MI TIENDA/);});
 test('administrative suspension cannot offer publishing or buyer availability',()=>{const r=render('published','active',true);assert.match(r.html,/La tienda está suspendida/);assert.doesNotMatch(r.html,/ABRIR MI TIENDA|id="mc-publish"|Los clientes ya pueden verla/);});
 test('pending draft keeps preview and accurately labels the subscription',()=>{const r=render('draft','pending');assert.match(r.html,/Tu tienda está en borrador/);assert.match(r.html,/PUBLICAR MI TIENDA/);assert.equal(r.badge.textContent,'pending');});
+
+test('plan panel shows the billing status rather than the dashboard editing allowance',()=>{
+ const source=fs.readFileSync(path.join(__dirname,'../simple/simple.js'),'utf8');
+ const plan=source.slice(source.indexOf('function planPanel('),source.indexOf('async function wizard('));
+ const panel={},ctx={document:{getElementById:()=>({})},money:String,esc:String};
+ vm.runInNewContext(plan,ctx);
+ for(const actual of ['pending','cancelled','past_due']){ctx.planPanel(panel,'qa',{status:'trial',actual_status:actual,amount:25000});assert.match(panel.innerHTML,new RegExp('<strong>'+actual+'</strong>'));assert.doesNotMatch(panel.innerHTML,/<strong>trial<\/strong>/);}
+ ctx.planPanel(panel,'qa',{status:'active',amount:25000});assert.match(panel.innerHTML,/<strong>active<\/strong>/);
+});
