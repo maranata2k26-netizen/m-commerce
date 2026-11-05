@@ -27,7 +27,7 @@ function isolate(start,end,options={}){
   updateUser:async args=>{calls.push(['update',args]);return{error:null}}
  };
  const context={
-  app:{innerHTML:''},sb:{auth:client},document:{getElementById:element},
+  app:{innerHTML:''},sb:{auth:client},document:{getElementById:element},route:options.route||'/simple/app',
   nav:()=>'<nav></nav>',field:(_name,_label,_type,value)=>'<input value="'+String(value||'')+'">',
   esc:v=>String(v||''),FormData:class{get(name){return fields[name]||''}},
   location:{search:options.search||'',href:'',replace:href=>actions.push(['replace',href])},
@@ -121,6 +121,14 @@ test('login uses password sign-in and returns to the Simple dashboard',async()=>
  assert.equal(x.calls[0][0],'login');
  assert.equal(x.calls[0][1].email,'owner@example.test');
  assert.equal(x.context.location.href,'/simple/app');
+});
+
+test('login from Master returns to Master instead of starting merchant onboarding',async()=>{
+ const x=isolate('function authView(mode){','async function adminRoute()', {route:'/simple/admin'});
+ x.context.authView('login');
+ await x.controls['auth-form'].onsubmit(ev());
+ assert.equal(x.calls[0][0],'login');
+ assert.equal(x.context.location.href,'/simple/admin');
 });
 
 test('signup with an immediate valid session skips email verification',async()=>{
