@@ -5,6 +5,8 @@ on:
   pull_request:
     paths:
       - "simple/**"
+      - "index.html"
+      - "scripts/public-entry.test.cjs"
       - "scripts/frontend-environment.test.cjs"
       - "scripts/auth-flow.test.cjs"
       - "scripts/simple-onboarding.test.cjs"
@@ -53,6 +55,8 @@ jobs:
         run: node --test scripts/auth-flow.test.cjs
       - name: Validate staging/production client isolation
         run: node --test scripts/frontend-environment.test.cjs
+      - name: Validate public entry and legacy merchant domain isolation
+        run: node --test scripts/public-entry.test.cjs
       - name: Smoke-test live staging origin (read-only HTTP)
         run: node --test scripts/staging-live-smoke.test.cjs
       - name: Validate Joaco contact and WhatsApp links

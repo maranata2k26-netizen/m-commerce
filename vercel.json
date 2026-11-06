@@ -15,6 +15,50 @@
       ],
       "destination": "https://mcommerce.vercel.app/:path*",
       "permanent": true
+    },
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "host",
+          "value": "mcommerce.vercel.app"
+        }
+      ],
+      "destination": "/simple",
+      "permanent": false
+    },
+    {
+      "source": "/index.html",
+      "has": [
+        {
+          "type": "host",
+          "value": "mcommerce.vercel.app"
+        }
+      ],
+      "destination": "/simple",
+      "permanent": false
+    },
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "host",
+          "value": "m-commerce-staging.vercel.app"
+        }
+      ],
+      "destination": "/simple",
+      "permanent": false
+    },
+    {
+      "source": "/index.html",
+      "has": [
+        {
+          "type": "host",
+          "value": "m-commerce-staging.vercel.app"
+        }
+      ],
+      "destination": "/simple",
+      "permanent": false
     }
   ],
   "rewrites": [
